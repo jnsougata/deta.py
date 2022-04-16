@@ -9,7 +9,7 @@ with open('README.rst') as f:
 
 
 setup(
-    name='aiotube',
+    name='asyncdeta',
     version='0.0.1',
     description='async API wrapper for deta.sh',
     long_description=readme,
@@ -34,7 +34,7 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     python_requires='>=3.8.0',
-    install_requires=['aiohttp'],
+    install_requires=['aiohttp==3.8.1'],
     project_urls={
         'Source': 'https://github.com/jnsougata/aisync-deta',
     },
