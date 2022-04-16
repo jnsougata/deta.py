@@ -9,7 +9,7 @@ with open('README.rst') as f:
 
 
 setup(
-    name='aiotube',
+    name='asyncdeta',
     version='0.0.1',
     description='async API wrapper for deta.sh',
     long_description=readme,
