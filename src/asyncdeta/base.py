@@ -17,7 +17,10 @@ class _Base:
         return self.name
 
     async def fetch(self, key: str):
-        return await self.__route._fetch(self.__session, name=self.name, key=key)
+        data = await self.__route._fetch(self.__session, name=self.name, key=key)
+        if len(data) == 1:
+            return None
+        return data
 
     async def put(self, *, key: str, field: Field):
         payload = {"items": [{"key": str(key), field.name: field.value}]}
