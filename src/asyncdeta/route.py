@@ -15,7 +15,10 @@ class Route:
     async def _fetch(self, session: aiohttp.ClientSession, *, name: str, key: str):
         ep = self.__root + name + '/items/' + key
         resp = await session.get(ep, headers=self.__headers)
-        return await resp.json()
+        data = await resp.json()
+        if len(data) == 1:
+            return None
+        return data
 
 
     async def _put(self, session: aiohttp.ClientSession, name: str, json_data: dict):
