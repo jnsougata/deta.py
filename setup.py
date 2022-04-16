@@ -30,7 +30,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Utilities',
     ],
-    keywords='youtube, youtube-data, youtube-api, youtube-data-api-v3',
+    keywords='deta.sh',
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     python_requires='>=3.8.0',
