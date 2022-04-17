@@ -1,8 +1,8 @@
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 
 
 class Field:
-    def __init__(self, name: str, value: Union[int, str, bool, float, list, Dict[str, Any]]):
+    def __init__(self, name: str, value: Optional[Union[int, str, bool, float, list, Dict[str, Any]]]):
         self.name = name
         self.value = value
 
