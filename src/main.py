@@ -8,15 +8,10 @@ async def main():
     token = os.getenv('DETA_TOKEN')
     session = aiohttp.ClientSession()
     deta = Deta(project_key=token, session=session)
-    base = deta.base(name='123TEST')
-    await base.update(
-        key='user_100',
-        data=[
-            Updater.set([Field('NAME', 'HEHEHO')]),
-            Updater.increment([Field('AGE', 3)]),
-            Updater.remove([Field('SEX', 'Any')])
-        ]
-    )
+    base = deta.base(name='GUILD193978189532364801')
+    print(base.get('arole'))
+    await base.cache()
+    print(base.get('arole'))
     await session.close()
 
 loop = asyncio.new_event_loop()

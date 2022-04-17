@@ -10,14 +10,29 @@ class _Base:
 
     def __init__(self, *, name: str, deta):
         self.name = name
+        self.cached = None
         self.__session = deta._session
         self.__route = Route(deta._project_key)
 
     def __str__(self):
         return self.name
 
+    async def cache(self):
+        self.cached = await self.fetch_all()
+        return self.cached
+
+    def get(self, key: str):
+        if self.cached:
+            for item in self.cached['items']:
+                if item['key'] == key:
+                    return item
+        return None
+
     async def fetch(self, key: str):
         return await self.__route._fetch(self.__session, name=self.name, key=key)
+
+    async def fetch_all(self):
+        return await self.__route._fetch_all(self.__session, name=self.name)
 
     async def put(self, *, key: str, field: Field):
         payload = {"items": [{"key": str(key), field.name: field.value}]}

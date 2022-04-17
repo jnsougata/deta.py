@@ -20,6 +20,11 @@ class Route:
             return None
         return data
 
+    async def _fetch_all(self, session: aiohttp.ClientSession, name: str):
+        ep = self.__root + name + '/query'
+        resp = await session.post(ep, headers=self.__headers)
+        return await resp.json()
+
 
     async def _put(self, session: aiohttp.ClientSession, name: str, json_data: dict):
         ep = self.__root + name + '/items'
