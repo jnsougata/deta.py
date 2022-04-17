@@ -9,10 +9,6 @@ async def main():
     session = aiohttp.ClientSession()
     deta = Deta(project_key=token, session=session)
     base = deta.base(name='123TESTT')
-    up = await base.update(key='1234567890', updates=[
-        Update.set([Field('PINGROLE', '1234567890')]),
-    ])
-    print(up)
     await session.close()
 
 loop = asyncio.new_event_loop()

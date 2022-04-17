@@ -33,14 +33,14 @@ class Route:
     async def _put(self, session: aiohttp.ClientSession, name: str, json_data: dict):
         ep = self.__root + name + '/items'
         resp = await session.put(ep, headers=self.__headers, json=json_data)
-        if resp.status == 200:
-            return await resp.json()
         if resp.status == 207:
-            print('Warning: items failed because of internal processing error', file=sys.stderr)
-            return await resp.json()
+            data = await resp.json()
+            if 'failed' in data:
+                print('Warning: some items failed because of internal processing error', file=sys.stderr)
         if resp.status == 400:
             e = await resp.json()
             raise BadRequest(e['errors'][0])
+        return await resp.json()
 
     async def _delete(self, session: aiohttp.ClientSession, name: str, key: str):
         ep = self.__root + name + '/items/' + key
