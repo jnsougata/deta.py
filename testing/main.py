@@ -1,14 +1,15 @@
 import os
 import aiohttp
 import asyncio
-from asyncdeta import Deta, Field, Update
+from src.asyncdeta import Deta, Field, Update
 
 
 async def main():
     token = os.getenv('DETA_TOKEN')
     session = aiohttp.ClientSession()
     deta = Deta(project_key=token, session=session)
-    base = deta.base(name='123TESTT')
+    base = deta.base(name='123TEST')
+    print(await base.fetch_all())
     await session.close()
 
 loop = asyncio.new_event_loop()
