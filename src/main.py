@@ -1,7 +1,7 @@
 import os
 import aiohttp
 import asyncio
-from asyncdeta import Deta, Field, Update, dict_to_field
+from asyncdeta import Deta, Field, Update
 
 
 async def main():
