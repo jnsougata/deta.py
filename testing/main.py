@@ -9,7 +9,7 @@ async def main():
     session = aiohttp.ClientSession()
     deta = Deta(project_key=token, session=session)
     base = deta.base(name='123TEST')
-    print(await base.fetch_all())
+    await base.add_field(key='1234567890', field=Field('YOUTUBE', {}))
     await session.close()
 
 loop = asyncio.new_event_loop()
