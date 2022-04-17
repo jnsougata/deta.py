@@ -7,24 +7,27 @@ class Field:
         self.value = value
 
 
-class Updater:
+class Update:
 
-    @staticmethod
-    def set(fields: List[Field]):
-        return {'set': {field.name: field.value for field in fields}}
+    def __init__(self, payload: Any):
+        self._value = payload
 
-    @staticmethod
-    def increment(fields: List[Field]):
+    @classmethod
+    def set(cls, fields: List[Field]):
+        return cls({'set': {field.name: field.value for field in fields}})
+
+    @classmethod
+    def increment(cls, fields: List[Field]):
         form = {}
         for filed in fields:
             if isinstance(filed.value, int) or isinstance(filed.value, float):
                 form[filed.name] = filed.value
             else:
                 raise TypeError('increment value must be int or float')
-        return {'increment': form}
+        return clas({'increment': form})
 
-    @staticmethod
-    def append(fields: List[Field]):
+    @classmethod
+    def append(cls, fields: List[Field]):
         form = {}
         for filed in fields:
             if isinstance(filed.value, list):
@@ -32,10 +35,10 @@ class Updater:
             else:
                 raise TypeError('append value must be list')
 
-        return {'append': form}
+        return cls({'append': form})
 
-    @staticmethod
-    def prepend(fields: List[Field]):
+    @classmethod
+    def prepend(cls, fields: List[Field]):
         form = {}
         for filed in fields:
             if isinstance(filed.value, list):
@@ -43,9 +46,13 @@ class Updater:
             else:
                 raise TypeError('prepend value must be list')
 
-        return {'prepend': form}
+        return cls({'prepend': form})
 
-    @staticmethod
-    def remove(fields: List[Field]):
+    @classmethod
+    def remove(cls, fields: List[Field]):
         form = [field.name for field in fields]
-        return {'delete': form}
+        return cls({'delete': form})
+
+
+def dict_to_field(payload: Dict[str, Any]) -> List[Field]:
+    return [Field(key, value) for key, value in payload.items()]
