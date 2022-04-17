@@ -72,13 +72,7 @@ class _Base:
 
     async def insert(self, *, key: str, field: Field):
         payload = {"item": {"key": str(key), field.name: field.value}}
-        status, data = await self.__route._insert(self.__session, name=self.name, json_data=payload)
-        if status == 201:
-            return data
-        if status == 409:
-            raise KeyConflict('key already exists in Deta base')
-        if status == 400:
-            raise BadRequest('invalid insert payload')
+        return await self.__route._insert(self.__session, name=self.name, json_data=payload)
 
     async def insert_many(self, *, key: str, fields: List[Field]):
         data = {field.name: field.value for field in fields}
