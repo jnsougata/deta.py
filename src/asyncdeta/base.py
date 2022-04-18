@@ -12,8 +12,8 @@ class _Base:
 
     def __init__(self, *, name: str, deta):
         self.name = name
-        self.__session = deta._session
-        self.__route = Route(deta._project_key)
+        self.__session = deta.session
+        self.__route = Route(deta.token)
 
     def __str__(self):
         return self.name

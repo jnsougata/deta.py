@@ -5,9 +5,9 @@ from .base import _Base
 
 class Deta:
 
-    def __init__(self, *, project_key: str):
-        self._session = None
-        self._project_key = project_key
+    def __init__(self, *, token: str):
+        self.token = token
+        self.session = None
 
     async def connect(self, *, session: aiohttp.ClientSession = None, loop: asyncio.AbstractEventLoop = None):
         """
@@ -15,17 +15,17 @@ class Deta:
         """
         if session is None:
             if loop:
-                self._session = aiohttp.ClientSession(loop=loop)
+                self.session = aiohttp.ClientSession(loop=loop)
             else:
-                self._session = aiohttp.ClientSession()
+                self.session = aiohttp.ClientSession()
         else:
-            self._session = session
+            self.session = session
 
     async def close(self):
         """
         closes the existing session
         """
-        await self._session.close()
+        await self.session.close()
 
     def base(self, name: str) -> _Base:
         """
