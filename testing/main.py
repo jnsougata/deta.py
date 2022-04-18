@@ -6,9 +6,7 @@ from src.asyncdeta import Deta, Field, Update
 
 
 async def main():
-    token = os.getenv('DETA_TOKEN')
-    session = aiohttp.ClientSession()
-    deta = Deta(token=token)
+    deta = Deta(token=os.getenv('DETA_TOKEN'))
     await deta.connect()
     base = deta.base(name='123TEST')
     await base.add_field(key='12345678', field=Field('YOUTUBE', '123'), force=True)

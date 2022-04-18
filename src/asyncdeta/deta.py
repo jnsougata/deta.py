@@ -5,7 +5,7 @@ from .base import _Base
 
 class Deta:
 
-    def __init__(self, *, token: str):
+    def __init__(self, token: str):
         self.token = token
         self.session = None
 
