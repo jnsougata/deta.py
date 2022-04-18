@@ -1,3 +1,4 @@
+from .errors import *
 from .route import Route
 from typing import List, Dict, Any, Union
 from .utils import Field, Update, dict_to_field
@@ -17,11 +18,18 @@ class _Base:
     def __str__(self):
         return self.name
 
-    async def add_field(self, key: str, field: Field):
+    async def add_field(self, key: str, field: Field, force: bool = False) -> Dict[str, Any]:
         """
         adds a field to an existing key.
+        if field already exists, old value will be overwritten.
         """
-        return await self.update(key=key, updates=[Update.set([field])])
+        if not force:
+            return await self.update(key=key, updates=[Update.set([field])])
+        try:
+            return await self.update(key=key, updates=[Update.set([field])])
+        except NotFound:
+            return await self.put(key=key, field=field)
+
 
     async def remove_field(self, key: str, field_name: str):
         """
