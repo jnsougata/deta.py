@@ -24,7 +24,7 @@ class Update:
                 form[filed.name] = filed.value
             else:
                 raise TypeError('increment value must be int or float')
-        return clas({'increment': form})
+        return cls({'increment': form})
 
     @classmethod
     def append(cls, fields: List[Field]):

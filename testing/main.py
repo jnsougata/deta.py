@@ -1,8 +1,6 @@
 import os
-import aiohttp
 import asyncio
-from src.asyncdeta import Deta, Field, Update
-
+from src.asyncdeta import Deta, Field
 
 
 async def main():
