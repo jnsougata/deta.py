@@ -72,7 +72,7 @@ class Route:
         if resp.status == 400:
             raise BadRequest('invalid update payload')
 
-    # TODO: support for  query is not implemented yet
+    # TODO: query is not implemented yet
 
     # Drive API methods
 
@@ -84,7 +84,7 @@ class Route:
             last: str = None,
     ):
         if limit > 1000:
-            raise ValueError('limit must be lower than 1000')
+            raise ValueError('limit must be less or equal to 1000')
         if limit <= 0:
             raise ValueError('limit must be greater than 0')
 
