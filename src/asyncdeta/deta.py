@@ -5,11 +5,19 @@ from .base import _Base
 
 class Deta:
 
-    def __init__(self, token: str):
-        self.token = token
+    def __init__(self, project_key: str):
+        if project_key:
+            self.token = project_key
+        else:
+            raise ValueError("project key is required")
         self.session = None
 
-    async def connect(self, *, session: aiohttp.ClientSession = None, loop: asyncio.AbstractEventLoop = None):
+    async def connect(
+            self,
+            *,
+            session: aiohttp.ClientSession = None,
+            loop: asyncio.AbstractEventLoop = None
+    ):
         """
         creates a new session for Deta to make requests to the API
         """
