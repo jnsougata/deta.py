@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 from .base import _Base
+from .drive import _Drive
 
 
 class Deta:
@@ -41,5 +42,5 @@ class Deta:
         """
         return _Base(name=name, deta=self)
 
-    def drive(self):
-        raise NotImplementedError("Drive is not implemented yet")
+    def drive(self, name: str) -> _Drive:
+        return _Drive(name=name, deta=self)

@@ -11,8 +11,7 @@ class _Base:
 
     def __init__(self, *, name: str, deta):
         self.name = name
-        self.__session = deta.session
-        self.__route = Route(deta.token, deta.session)
+        self.__route = Route(deta)
 
     def __str__(self):
         return self.name
@@ -39,13 +38,13 @@ class _Base:
         """
         fetches a single item from deta by key.
         """
-        return await self.__route._fetch(name=self.name, key=key)
+        return await self.__route._fetch(base_name=self.name, key=key)
 
     async def fetch_all(self) -> List[Dict[str, Any]]:
         """
         fetches all key and values from given base.
         """
-        return await self.__route._fetch_all(name=self.name)
+        return await self.__route._fetch_all(base_name=self.name)
 
     async def put(self, key: str, field: Field) -> Dict[str, Any]:
         """
@@ -53,7 +52,7 @@ class _Base:
         if key already exists, old value will be overwritten.
         """
         payload = {"items": [{"key": str(key), field.name: field.value}]}
-        return await self.__route._put(name=self.name, json_data=payload)
+        return await self.__route._put(base_name=self.name, json_data=payload)
 
     async def put_many(self, key: str, fields: List[Field]) -> Dict[str, Any]:
         """
@@ -63,7 +62,7 @@ class _Base:
         data = {field.name: field.value for field in fields}
         data['key'] = str(key)
         payload = {"items": [data]}
-        return await self.__route._put(name=self.name, json_data=payload)
+        return await self.__route._put(base_name=self.name, json_data=payload)
 
     async def put_bulk(self, keys: List[str], bulk_fields: List[List[Field]]) -> List[Dict[str, Any]]:
         """
@@ -78,26 +77,26 @@ class _Base:
             data['key'] = str(key)
             form.append(data)
         payload = {"items": form}
-        return await self.__route._put(name=self.name, json_data=payload)
+        return await self.__route._put(base_name=self.name, json_data=payload)
 
     async def delete(self, key: str):
         """
         removes a single key, and it's value from base.
         """
-        return await self.__route._delete(name=self.name, key=key)
+        return await self.__route._delete(base_name=self.name, key=key)
 
     async def delete_many(self, keys: List[str]):
         """
         removes multiple keys and their values from base with given keys.
         """
-        return await self.__route._delete_many(name=self.name, keys=keys)
+        return await self.__route._delete_many(base_name=self.name, keys=keys)
 
     async def insert(self, key: str, field: Field):
         """
         creates a field to base with given key if any field with same key doesn't exist.
         """
         payload = {"item": {"key": str(key), field.name: field.value}}
-        return await self.__route._insert(name=self.name, json_data=payload)
+        return await self.__route._insert(base_name=self.name, json_data=payload)
 
     async def insert_many(self, key: str, fields: List[Field]):
         """
@@ -107,7 +106,7 @@ class _Base:
         data = {field.name: field.value for field in fields}
         data['key'] = str(key)
         payload = {"item": data}
-        return await self.__route._insert(name=self.name, json_data=payload)
+        return await self.__route._insert(base_name=self.name, json_data=payload)
 
     async def update(self, key: str, updates: List[Update]):
         """
@@ -116,4 +115,4 @@ class _Base:
         payload = {}
         for update in updates:
             payload.update(update._value)
-        return await self.__route._update(name=self.name, key=key, json_data=payload)
+        return await self.__route._update(base_name=self.name, key=key, json_data=payload)
