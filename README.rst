@@ -71,7 +71,7 @@ Base
 ~~~~~~
 .. csv-table::
    :header: "Method", "Return Type", "Description"
-   :widths: 100, 100, 100
+   :widths: 200, 100, 200
 
    "add_field(key: str, field: Field, force: bool = False)", "Dict[str, Any]", "Adds a field to an existing key. If field already exists, old value will be overwritten."
    "remove_field(self, key: str, field_name: str)", "Dict[str, Any]", "Removes a field from an existing key."
