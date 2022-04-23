@@ -6,7 +6,7 @@ async def main():
     deta = Deta('c0hzr4gf_5us9rqXTgKDF4gHRXXyvUkV8GiTpQY9a')
     await deta.connect()
     drive = deta.drive(name='test_123')
-    resp = await drive.upload(file_name='main.py', local_path='main.py')
+    resp = await drive.files()
     print(resp)
     await deta.close()
 

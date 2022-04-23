@@ -10,7 +10,7 @@ class _Drive:
         self.name = name
         self.__route = Route(deta)
 
-    async def files(self, limit: int = None) -> Dict[str, Any]:
+    async def files(self, limit: int = None) -> Dict[str, List[str]]:
         return await self.__route._fetch_file_list(drive_name=self.name, limit=limit)
 
     async def delete(self, file_name: str) -> Dict[str, Any]:

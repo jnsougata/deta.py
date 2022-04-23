@@ -91,12 +91,12 @@ class Route:
             prefix: str = None,
             last: str = None,
     ):
-        if limit > 1000:
-            raise ValueError('limit must be less or equal to 1000')
-        if limit <= 0:
-            raise ValueError('limit must be greater than 0')
-
         limit_ = limit or 1000
+
+        if limit_ > 1000:
+            raise ValueError('limit must be less or equal to 1000')
+        if limit_ <= 0:
+            raise ValueError('limit must be greater than 0')
 
         tail = f'/files?limit={limit_}'
         if prefix:
