@@ -28,7 +28,7 @@ class _Base:
         except NotFound:
             return await self.put(key=key, field=field)
 
-    async def remove_field(self, key: str, field_name: str):
+    async def remove_field(self, key: str, field_name: str) -> Dict[str, Any]:
         """
         removes a field from an existing key.
         """
@@ -64,10 +64,10 @@ class _Base:
         payload = {"items": [data]}
         return await self.__route._put(base_name=self.name, json_data=payload)
 
-    async def put_bulk(self, keys: List[str], bulk_fields: List[List[Field]]) -> List[Dict[str, Any]]:
+    async def put_bulk(self, keys: List[str], bulk_fields: List[List[Field]]) -> Dict[str, Any]:
         """
         adds multiple fields to base with given keys.
-        if key already exists, old value will be overwritten.
+        if any key already exists, old value will be overwritten.
         """
         if len(keys) != len(bulk_fields):
             raise ValueError("keys and bulk_fields must be the same in length")
@@ -79,26 +79,26 @@ class _Base:
         payload = {"items": form}
         return await self.__route._put(base_name=self.name, json_data=payload)
 
-    async def delete(self, key: str):
+    async def delete(self, key: str) -> Dict[str, Any]:
         """
         removes a single key, and it's value from base.
         """
         return await self.__route._delete(base_name=self.name, key=key)
 
-    async def delete_many(self, keys: List[str]):
+    async def delete_many(self, keys: List[str]) -> Dict[str, Any]:
         """
         removes multiple keys and their values from base with given keys.
         """
         return await self.__route._delete_many(base_name=self.name, keys=keys)
 
-    async def insert(self, key: str, field: Field):
+    async def insert(self, key: str, field: Field) -> Dict[str, Any]:
         """
         creates a field to base with given key if any field with same key doesn't exist.
         """
         payload = {"item": {"key": str(key), field.name: field.value}}
         return await self.__route._insert(base_name=self.name, json_data=payload)
 
-    async def insert_many(self, key: str, fields: List[Field]):
+    async def insert_many(self, key: str, fields: List[Field]) -> Dict[str, Any]:
         """
         creates multiple fields to base with given key if any of fields with same key doesn't exist.
         Uses a single call to API.
@@ -108,7 +108,7 @@ class _Base:
         payload = {"item": data}
         return await self.__route._insert(base_name=self.name, json_data=payload)
 
-    async def update(self, key: str, updates: List[Update]):
+    async def update(self, key: str, updates: List[Update]) -> Dict[str, Any]:
         """
         updates a field only if a field with given key exists.
         """
