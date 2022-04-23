@@ -1,9 +1,9 @@
 import io
 import sys
-from .errors import *
-from urllib.parse import quote_plus
-from typing import Any
 import asyncio
+from .errors import *
+from typing import Any
+from urllib.parse import quote_plus
 
 
 class Route:
@@ -184,3 +184,15 @@ class Route:
                 elif resp.status == 404:
                     error_map = await resp.json()
                     raise NotFound('\n'.join(error_map['errors']))
+
+    async def _pull_file(self, drive_name, remote_path) -> bytes:
+        ep = self.__drive_root + drive_name + f'/files/download?name={quote_plus(remote_path)}'
+        resp = await self.__session.get(ep, headers=self.__drive_headers)
+        if resp.status == 200:
+            return await resp.read()
+        elif resp.status == 400:
+            error_map = await resp.json()
+            raise BadRequest('\n'.join(error_map['errors']))
+        elif resp.status == 404:
+            error_map = await resp.json()
+            raise NotFound('\n'.join(error_map['errors']))

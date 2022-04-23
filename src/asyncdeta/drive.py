@@ -1,5 +1,4 @@
 import io
-
 from .route import Route
 from typing import List, Dict, Optional, Union, Any
 
@@ -30,3 +29,5 @@ class _Drive:
             drive_name=self.name, remote_path=file_name, local_path=local_path, content=content
         )
 
+    async def download(self, file_name: str) -> bytes:
+        return await self.__route._pull_file(drive_name=self.name, remote_path=file_name)
