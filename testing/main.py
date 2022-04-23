@@ -1,13 +1,13 @@
-import os
 import asyncio
-from src.asyncdeta import Deta, Field
+from src.asyncdeta import Deta
 
 
 async def main():
-    deta = Deta('abc_xyz')
+    deta = Deta('c0hzr4gf_5us9rqXTgKDF4gHRXXyvUkV8GiTpQY9a')
     await deta.connect()
-    base = deta.base(name='123TEST')
-    await base.add_field(key='12345678', field=Field('YOUTUBE', '123'), force=True)
+    drive = deta.drive(name='test_123')
+    resp = await drive.upload(file_name='main.py', local_path='main.py')
+    print(resp)
     await deta.close()
 
 

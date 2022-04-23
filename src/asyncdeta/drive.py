@@ -27,9 +27,6 @@ class _Drive:
             content: Optional[Union[bytes, str]] = None
     ) -> Dict[str, Any]:
         return await self.__route._push_file(
-            drive_name=self.name,
-            remote_path=file_name,
-            local_path=local_path,
-            content=content
+            drive_name=self.name, remote_path=file_name, local_path=local_path, content=content
         )
 

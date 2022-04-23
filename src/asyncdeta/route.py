@@ -120,7 +120,6 @@ class Route:
         return await resp.json()
 
     async def _push_file(self, drive_name: str, remote_path: str, local_path: str = None, content: Any = None):
-        ep = self.__drive_root + drive_name + '/files?name=' + quote_plus(remote_path)
 
         if local_path is not None:
             data = open(local_path, 'rb')
@@ -131,10 +130,11 @@ class Route:
         else:
             raise ValueError('local_path or content must be specified')
 
-        CHUNK = data.read()
+        CONTENT_CHUNK = data.read()
 
-        if not len(CHUNK) > self.__SINGLE_REQ_UPLOAD_SIZE:
-            resp = await self.__session.post(ep, headers=self.__drive_headers, data=CHUNK)
+        if not len(CONTENT_CHUNK) > self.__SINGLE_REQ_UPLOAD_SIZE:
+            ep = self.__drive_root + drive_name + '/files?name=' + quote_plus(remote_path)
+            resp = await self.__session.post(ep, headers=self.__drive_headers, data=CONTENT_CHUNK)
             if resp.status == 201:
                 return await resp.json()
             elif resp.status == 400:
@@ -144,5 +144,43 @@ class Route:
                 error_map = await resp.json()
                 raise Exception('\n'.join(error_map['errors']))
         else:
-            # use multipart upload
-            pass
+            ep = self.__drive_root + drive_name + '/uploads?name=' + quote_plus(remote_path)
+            resp = await self.__session.post(ep, headers=self.__drive_headers)
+            if resp.status == 202:
+                upload_id = (await resp.json())['upload_id']
+                CHUNKS = [
+                    CONTENT_CHUNK[i:i+self.__SINGLE_REQ_UPLOAD_SIZE]
+                    for i in range(0, len(CONTENT_CHUNK), self.__SINGLE_REQ_UPLOAD_SIZE)
+                ]
+                uploads = []
+                for i, CHUNK in enumerate(CHUNKS[:-1]):
+                    post_ep = (
+                        f"{self.__drive_root}{drive_name}/uploads/{upload_id}/parts?name={remote_path}&part={i+1}"
+                    )
+                    uploads.append(
+                        asyncio.create_task(self.__session.post(post_ep, headers=self.__drive_headers, data=CHUNK))
+                    )
+                gathered = await asyncio.gather(*uploads)
+                for item in gathered:
+                    if isinstance(item, Exception):
+                        abort_ep = f"{self.__drive_root}{drive_name}/uploads/{upload_id}?name={remote_path}"
+                        resp = await self.__session.delete(abort_ep, headers=self.__drive_headers)
+                        if resp.status == 200:
+                            return await resp.json()
+                        elif resp.status == 400:
+                            error_map = await resp.json()
+                            raise BadRequest('\n'.join(error_map['errors']))
+                        elif resp.status == 404:
+                            error_map = await resp.json()
+                            raise NotFound('\n'.join(error_map['errors']))
+
+                patch_ep = f"{self.__drive_root}{drive_name}/uploads/{upload_id}?name={remote_path}"
+                resp = await self.__session.patch(patch_ep, headers=self.__drive_headers, data=CHUNKS[-1])
+                if resp.status == 200:
+                    return await resp.json()
+                elif resp.status == 400:
+                    error_map = await resp.json()
+                    raise BadRequest('\n'.join(error_map['errors']))
+                elif resp.status == 404:
+                    error_map = await resp.json()
+                    raise NotFound('\n'.join(error_map['errors']))
