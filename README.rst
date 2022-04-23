@@ -1,4 +1,4 @@
-async-deta
+Async DETA
 ==========
 
 An async library to interact with deta.sh
