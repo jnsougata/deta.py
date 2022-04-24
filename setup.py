@@ -36,6 +36,6 @@ setup(
     python_requires='>=3.8.0',
     install_requires=['aiohttp==3.8.1'],
     project_urls={
-        'Source': 'https://github.com/jnsougata/aisync-deta',
+        'Source': 'https://github.com/jnsougata/async-deta',
     },
 )
