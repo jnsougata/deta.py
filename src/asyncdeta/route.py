@@ -22,6 +22,10 @@ class Route:
         self.__base_headers = {'X-API-Key': deta.token, 'Content-Type': self.__MIME_TYPE}
         self.__drive_headers = {'X-API-Key': deta.token, 'Content-Type': self.__CONTENT_TYPE}
 
+    @staticmethod
+    def __err(payload: dict) -> str:
+        return '\n'.join(payload['errors'])
+
     async def _fetch(self, base_name: str, key: str):
         ep = self.__base_root + base_name + '/items/' + key
         resp = await self.__session.get(ep, headers=self.__base_headers)
@@ -139,60 +143,60 @@ class Route:
                 return await resp.json()
             elif resp.status == 400:
                 error_map = await resp.json()
-                raise BadRequest('\n'.join(error_map['errors']))
+                raise BadRequest(self.__err(error_map))
             else:
                 error_map = await resp.json()
-                raise Exception('\n'.join(error_map['errors']))
-        else:
-            ep = self.__drive_root + drive_name + '/uploads?name=' + quote_plus(remote_path)
-            resp = await self.__session.post(ep, headers=self.__drive_headers)
-            if resp.status == 202:
-                upload_id = (await resp.json())['upload_id']
-                CHUNKS = [
-                    CONTENT_CHUNK[i:i+self.__SINGLE_REQ_UPLOAD_SIZE]
-                    for i in range(0, len(CONTENT_CHUNK), self.__SINGLE_REQ_UPLOAD_SIZE)
-                ]
-                uploads = []
-                for i, CHUNK in enumerate(CHUNKS[:-1]):
-                    post_ep = (
-                        f"{self.__drive_root}{drive_name}/uploads/{upload_id}/parts?name={remote_path}&part={i+1}"
-                    )
-                    uploads.append(
-                        asyncio.create_task(self.__session.post(post_ep, headers=self.__drive_headers, data=CHUNK))
-                    )
-                gathered = await asyncio.gather(*uploads)
-                for item in gathered:
-                    if isinstance(item, Exception):
-                        abort_ep = f"{self.__drive_root}{drive_name}/uploads/{upload_id}?name={remote_path}"
-                        resp = await self.__session.delete(abort_ep, headers=self.__drive_headers)
-                        if resp.status == 200:
-                            return await resp.json()
-                        elif resp.status == 400:
-                            error_map = await resp.json()
-                            raise BadRequest('\n'.join(error_map['errors']))
-                        elif resp.status == 404:
-                            error_map = await resp.json()
-                            raise NotFound('\n'.join(error_map['errors']))
+                raise Exception(self.__err(error_map))
 
-                patch_ep = f"{self.__drive_root}{drive_name}/uploads/{upload_id}?name={remote_path}"
-                resp = await self.__session.patch(patch_ep, headers=self.__drive_headers, data=CHUNKS[-1])
-                if resp.status == 200:
-                    return await resp.json()
-                elif resp.status == 400:
-                    error_map = await resp.json()
-                    raise BadRequest('\n'.join(error_map['errors']))
-                elif resp.status == 404:
-                    error_map = await resp.json()
-                    raise NotFound('\n'.join(error_map['errors']))
+        ep = self.__drive_root + drive_name + '/uploads?name=' + quote_plus(remote_path)
+        resp = await self.__session.post(ep, headers=self.__drive_headers)
+        if resp.status == 202:
+            upload_id = (await resp.json())['upload_id']
+            CHUNKS = [
+                CONTENT_CHUNK[i:i+self.__SINGLE_REQ_UPLOAD_SIZE]
+                for i in range(0, len(CONTENT_CHUNK), self.__SINGLE_REQ_UPLOAD_SIZE)
+            ]
+            uploads = []
+            for i, CHUNK in enumerate(CHUNKS[:-1]):
+                post_ep = (
+                    f"{self.__drive_root}{drive_name}/uploads/{upload_id}/parts?name={remote_path}&part={i+1}"
+                )
+                uploads.append(
+                    asyncio.create_task(self.__session.post(post_ep, headers=self.__drive_headers, data=CHUNK))
+                )
+            gathered = await asyncio.gather(*uploads)
+            for item in gathered:
+                if isinstance(item, Exception):
+                    abort_ep = f"{self.__drive_root}{drive_name}/uploads/{upload_id}?name={remote_path}"
+                    resp = await self.__session.delete(abort_ep, headers=self.__drive_headers)
+                    if resp.status == 200:
+                        return await resp.json()
+                    if resp.status == 400:
+                        error_map = await resp.json()
+                        raise BadRequest(self.__err(error_map))
+                    if resp.status == 404:
+                        error_map = await resp.json()
+                        raise NotFound(self.__err(error_map))
+
+            patch_ep = f"{self.__drive_root}{drive_name}/uploads/{upload_id}?name={remote_path}"
+            resp = await self.__session.patch(patch_ep, headers=self.__drive_headers, data=CHUNKS[-1])
+            if resp.status == 200:
+                return await resp.json()
+            if resp.status == 400:
+                error_map = await resp.json()
+                raise BadRequest(self.__err(error_map))
+            if resp.status == 404:
+                error_map = await resp.json()
+                raise NotFound(self.__err(error_map))
 
     async def _pull_file(self, drive_name, remote_path) -> bytes:
         ep = self.__drive_root + drive_name + f'/files/download?name={quote_plus(remote_path)}'
         resp = await self.__session.get(ep, headers=self.__drive_headers)
         if resp.status == 200:
             return await resp.read()
-        elif resp.status == 400:
+        if resp.status == 400:
             error_map = await resp.json()
-            raise BadRequest('\n'.join(error_map['errors']))
-        elif resp.status == 404:
+            raise BadRequest(self.__err(error_map))
+        if resp.status == 404:
             error_map = await resp.json()
-            raise NotFound('\n'.join(error_map['errors']))
+            raise NotFound(self.__err(error_map))
