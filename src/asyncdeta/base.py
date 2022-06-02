@@ -47,7 +47,6 @@ class _Base:
         container = []
 
         async def recurse(last: Optional[str]):
-            print(container)
             data = await self.__route._fetch_all(base_name=self.name, last=last)
             last_from_response = data['paging'].get('last')
             if last_from_response:
