@@ -1,6 +1,7 @@
 import io
 import sys
 import asyncio
+import aiohttp
 from .errors import *
 from typing import Any
 from urllib.parse import quote_plus
@@ -34,12 +35,12 @@ class Route:
         if resp.status == 404:
             return None
 
-    async def _fetch_all(self, base_name: str):
+    async def _fetch_all(self, base_name: str, *, last: str = None):
         ep = self.__base_root + base_name + '/query'
-        resp = await self.__session.post(ep, headers=self.__base_headers)
+        _json = {'last': last}
+        resp = await self.__session.post(ep, headers=self.__base_headers, json=_json)
         if resp.status == 200:
-            data = await resp.json()
-            return data['items']
+            return await resp.json()
         return None
 
     async def _put(self, base_name: str, json_data: dict):
@@ -60,9 +61,8 @@ class Route:
         return key
 
     async def _delete_many(self, base_name: str, keys: list):
-        for key in keys:
-            await self._delete(base_name, key)
-        return keys
+        task = [asyncio.create_task(self._delete(base_name, key)) for key in keys]
+        return await asyncio.gather(*task)
 
     async def _insert(self, base_name: str, json_data: dict):
         ep = self.__base_root + base_name + '/items'

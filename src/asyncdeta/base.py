@@ -1,7 +1,7 @@
 from .errors import *
 from .route import Route
 from .utils import Field, Update
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 __all__ = ['_Base']
@@ -44,7 +44,20 @@ class _Base:
         """
         fetches all key and values from given base.
         """
-        return await self.__route._fetch_all(base_name=self.name)
+        container = []
+
+        async def recurse(last: Optional[str]):
+            print(container)
+            data = await self.__route._fetch_all(base_name=self.name, last=last)
+            last_from_response = data['paging'].get('last')
+            if last_from_response:
+                container.extend(data['items'])
+                await recurse(last_from_response)
+            else:
+                container.extend(data['items'])
+                return container
+
+        return await recurse(None)
 
     async def put(self, key: str, field: Field) -> Dict[str, Any]:
         """

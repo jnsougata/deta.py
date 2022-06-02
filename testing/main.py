@@ -1,16 +1,19 @@
 import os
 import asyncio
 from src.asyncdeta import Deta, Field
+import time
 
 
 async def main():
     deta = Deta(os.getenv("DETA_TOKEN"))
     await deta.connect()
-    drive = deta.drive(name='123_drive')
-    base = deta.base(name='123_base')
-    await base.put(key='test', field=Field(name='abc', value={'a': 1, 'b': 2}))
-    await drive.upload(file_name='song.mp3', local_path='/home/jnsougata/Downloads/song.mp3')
+    base = deta.base(name='123BASE')
+    keys = [f'TARGET{i}' for i in range(1000)]
+    s = time.perf_counter()
+    print(await base.delete_many(keys))
+    e = time.perf_counter()
     await deta.close()
+    print(f'Time taken {e - s:.2f} seconds to delete {len(keys)} items')
 
 
 loop = asyncio.new_event_loop()
