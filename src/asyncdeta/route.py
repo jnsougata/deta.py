@@ -84,15 +84,13 @@ class Route:
         if resp.status == 400:
             raise BadRequest('invalid update payload')
 
-    async def _query(self, base_name: str, limit: int, last: str, query_list: list):
+    async def _query(self, base_name: str, limit: int, last: str, query_data: dict):
         ep = self.__base_root + base_name + '/query'
-        payload = {'query': query_list}
         if limit:
-            payload['limit'] = int(limit)
+            query_data['limit'] = int(limit)
         if last:
-            payload['last'] = str(last)
-        print(payload)
-        resp = await self.__session.post(ep, headers=self.__base_headers, json=payload)
+            query_data['last'] = str(last)
+        resp = await self.__session.post(ep, headers=self.__base_headers, json=query_data)
         if resp.status == 200:
             return await resp.json()
         if resp.status == 400:

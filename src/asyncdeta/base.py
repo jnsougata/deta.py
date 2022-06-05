@@ -130,11 +130,13 @@ class _Base:
         return await self.__route._update(base_name=self.name, key=key, update_payload=payload)
 
     async def query(
-            self, queries: List[Query], *, limit: Optional[int] = None,
+            self,
+            query: Query,
+            *,
+            limit: Optional[int] = None,
             last: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         queries base with given query.
         """
-        query_list = [q._value for q in queries]
-        return await self.__route._query(base_name=self.name, query_list=query_list, limit=limit, last=last)
+        return await self.__route._query(base_name=self.name, query_data=query._data, limit=limit, last=last)

@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Dict, Any, Union, Optional
 
 
@@ -60,7 +61,10 @@ class Update:
 class Query:
 
     def __init__(self, payload: Any):
-        self._value = payload
+        if isinstance(payload, list):
+            self._data = {'query': payload}
+        else:
+            self._data = {'query': [payload]}
 
     @classmethod
     def equals(cls, key: str, value: Any):
@@ -101,3 +105,17 @@ class Query:
     @classmethod
     def starts_with(cls, key: str, value: Union[str, List[str]]):
         return cls({f'{key}?pfx': value})
+
+    @classmethod
+    def AND(cls, queries: List[Query]):
+        return cls({k: v for q in queries for k, v in q._data.items()})
+
+    @classmethod
+    def OR(cls, queries: List[Query]):
+        return cls([q._data['query'][0] for q in queries])
+
+
+query = Query
+update = Update
+
+__all__ = ['query', 'update']
