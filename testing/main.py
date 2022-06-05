@@ -1,6 +1,6 @@
 import os
 import asyncio
-from src.asyncdeta import Deta, Field
+from src.asyncdeta import Deta, Field, Query
 from tabulate import tabulate
 
 
@@ -8,11 +8,8 @@ async def main():
     deta = Deta(os.getenv("DETA_TOKEN"))
     await deta.connect()
     base = deta.base(name='01PIXEL')
-    payload = await base.fetch_all()
-    tables = [tabulate(data.items(), headers='keys') for data in payload]
-    ini = '\n'.join(tables)
-    with open('table.pxl', 'w') as f:
-        f.write(ini)
+    q = await base.query([Query.equal('RECEPTION', '857943375558082570')])
+    print(q)
     await deta.close()
 
 

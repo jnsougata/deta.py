@@ -74,9 +74,9 @@ class Route:
         if resp.status == 400:
             raise BadRequest('invalid insert payload')
 
-    async def _update(self, base_name: str, key: str, json_data: dict):
+    async def _update(self, base_name: str, key: str, update_payload: dict):
         ep = self.__base_root + base_name + '/items/' + key
-        resp = await self.__session.patch(ep, headers=self.__base_headers, json=json_data)
+        resp = await self.__session.patch(ep, headers=self.__base_headers, json=update_payload)
         if resp.status == 200:
             return await resp.json()
         if resp.status == 404:
@@ -84,7 +84,20 @@ class Route:
         if resp.status == 400:
             raise BadRequest('invalid update payload')
 
-    # TODO: query is not implemented yet
+    async def _query(self, base_name: str, limit: int, last: str, query_list: list):
+        ep = self.__base_root + base_name + '/query'
+        payload = {'query': query_list}
+        if limit:
+            payload['limit'] = int(limit)
+        if last:
+            payload['last'] = str(last)
+        print(payload)
+        resp = await self.__session.post(ep, headers=self.__base_headers, json=payload)
+        if resp.status == 200:
+            return await resp.json()
+        if resp.status == 400:
+            error_map = await resp.json()
+            raise BadRequest('\n'.join(error_map['errors']))
 
     # Drive API methods
 

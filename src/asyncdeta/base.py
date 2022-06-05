@@ -1,6 +1,6 @@
 from .errors import *
 from .route import Route
-from .utils import Field, Update
+from .utils import Field, Update, Query
 from typing import List, Dict, Any, Optional
 
 
@@ -127,4 +127,14 @@ class _Base:
         payload = {}
         for update in updates:
             payload.update(update._value)
-        return await self.__route._update(base_name=self.name, key=key, json_data=payload)
+        return await self.__route._update(base_name=self.name, key=key, update_payload=payload)
+
+    async def query(
+            self, queries: List[Query], *, limit: Optional[int] = None,
+            last: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        queries base with given query.
+        """
+        query_list = [q._value for q in queries]
+        return await self.__route._query(base_name=self.name, query_list=query_list, limit=limit, last=last)

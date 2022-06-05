@@ -26,4 +26,4 @@ SOFTWARE.
 __version__ = "0.0.1"
 
 from .deta import Deta
-from .utils import Field, Update
+from .utils import Field, Update, Query

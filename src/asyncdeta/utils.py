@@ -7,6 +7,10 @@ class Field:
         self.value = value
 
 
+def dict_to_field(payload: Dict[str, Any]) -> List[Field]:
+    return [Field(key, value) for key, value in payload.items()]
+
+
 class Update:
 
     def __init__(self, payload: Any):
@@ -50,9 +54,50 @@ class Update:
 
     @classmethod
     def remove(cls, fields: List[Field]):
-        form = [field.name for field in fields]
-        return cls({'delete': form})
+        return cls({'delete': [field.name for field in fields]})
 
 
-def dict_to_field(payload: Dict[str, Any]) -> List[Field]:
-    return [Field(key, value) for key, value in payload.items()]
+class Query:
+
+    def __init__(self, payload: Any):
+        self._value = payload
+
+    @classmethod
+    def equals(cls, key: str, value: Any):
+        return cls({key: value})
+
+    @classmethod
+    def not_equals(cls, key: str, value: Any):
+        return cls({f'{key}?ne': value})
+
+    @classmethod
+    def greater_than(cls, key: str, value: Union[int, float]):
+        return cls({f'{key}?gt': value})
+
+    @classmethod
+    def greater_equals(cls, key: str, value: Union[int, float]):
+        return cls({f'{key}?gte': value})
+
+    @classmethod
+    def less_than(cls, key: str, value: Union[int, float]):
+        return cls({f'{key}?lt': value})
+
+    @classmethod
+    def less_equals(cls, key: str, value: Union[int, float]):
+        return cls({f'{key}?lte': value})
+
+    @classmethod
+    def in_range(cls, key: str, value: Union[int, float]):
+        return cls({f'{key}?r': value})
+
+    @classmethod
+    def contains(cls, key: str, value: Union[str, List[str]]):
+        return cls({f'{key}?contains': value})
+
+    @classmethod
+    def not_contains(cls, key: str, value: Union[str, List[str]]):
+        return cls({f'{key}?not_contains': value})
+
+    @classmethod
+    def starts_with(cls, key: str, value: Union[str, List[str]]):
+        return cls({f'{key}?pfx': value})
