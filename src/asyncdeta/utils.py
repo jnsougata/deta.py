@@ -113,9 +113,3 @@ class Query:
     @classmethod
     def OR(cls, queries: List[Query]):
         return cls([q._data['query'][0] for q in queries])
-
-
-query = Query
-update = Update
-
-__all__ = ['query', 'update']
