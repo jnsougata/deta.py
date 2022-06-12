@@ -64,14 +64,13 @@ class _Base:
 
         async def recurse(last: Optional[str]):
             data = await self.__route._fetch_all(base_name=self.name, last=last)
-            last_from_response = data['paging'].get('last')
-            if last_from_response:
+            last_resp = data['paging'].get('last')
+            if last_resp:
                 container.extend(data['items'])
-                await recurse(last_from_response)
+                await recurse(last_resp)
             else:
                 container.extend(data['items'])
                 return container
-
         return await recurse(None)
 
     async def put(

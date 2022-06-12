@@ -96,4 +96,4 @@ Drive
    "delete(file_name: str)", "Dict[str, Any]", "Deletes a file from a drive by file name."
    "delete_many(self, file_names: List[str])", "Dict[str, Any]", "Deletes multiple files from a drive by file names."
    "upload(*, file_name: str, local_path: Optional[str] = None, content: Optional[Union[bytes, str]] = None)", "[Dict[str, Any]", "Uploads a file to a drive."
-   "download(file_name: str)", "bytes", "Downloads a file from a drive by file name."
+   "download(file_name: str)", "io.BytesIO", "Downloads a file from a drive by file name."

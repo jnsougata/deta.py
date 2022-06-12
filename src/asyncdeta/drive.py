@@ -9,11 +9,25 @@ class _Drive:
         self.name = name
         self.__route = Route(deta)
 
-    async def files(self, limit: int = None) -> Dict[str, List[str]]:
+    async def files(self, limit: int = None) -> List[str]:
         """
-        fetches names of first 1000 files in the drive
+        fetches names of files in the drive.
         """
-        return await self.__route._fetch_file_list(drive_name=self.name, limit=limit)
+        if limit is None:
+            container = []
+
+            async def recurse(last: Optional[str]):
+                data = await self.__route._fetch_file_list(drive_name=self.name, limit=None)
+                paging = data.get('paging')
+                if paging:
+                    container.extend(data['names'])
+                    await recurse(paging.get('last'))
+                else:
+                    container.extend(data['names'])
+                    return container
+            return await recurse(None)
+        else:
+            return (await self.__route._fetch_file_list(drive_name=self.name, limit=limit))['names']
 
     async def delete(self, file_name: str) -> Dict[str, Any]:
         """
@@ -41,8 +55,15 @@ class _Drive:
             drive_name=self.name, remote_path=file_name, local_path=local_path, content=content
         )
 
-    async def download(self, file_name: str) -> bytes:
+    async def download(self, file_name: str) -> io.BytesIO:
         """
         downloads a file from the drive with the given name.
         """
-        return await self.__route._pull_file(drive_name=self.name, remote_path=file_name)
+        stream = await self.__route._pull_file(drive_name=self.name, remote_path=file_name)
+        buffer = b""
+
+        async for data, end_of_http_chunk in stream.content.iter_chunks():
+            buffer += data
+            if end_of_http_chunk:
+                buffer = b""
+        return io.BytesIO(buffer)
