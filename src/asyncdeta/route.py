@@ -27,6 +27,9 @@ class Route:
     def __err(payload: dict) -> str:
         return '\n'.join(payload['errors'])
 
+    async def _close(self):
+        await self.__session.close()
+
     async def _fetch(self, base_name: str, key: str):
         ep = self.__base_root + base_name + '/items/' + key
         resp = await self.__session.get(ep, headers=self.__base_headers)
