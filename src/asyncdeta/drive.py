@@ -27,7 +27,9 @@ class _Drive:
                     return container
             return await recurse(None)
         else:
-            return (await self.__route._fetch_file_list(drive_name=self.name, limit=limit))['names']
+            return (
+                await self.__route._fetch_file_list(drive_name=self.name, limit=limit)
+            )['names']
 
     async def delete(self, file_name: str) -> Dict[str, Any]:
         """
@@ -43,19 +45,28 @@ class _Drive:
 
     async def upload(
             self,
-            *,
             file_name: str,
-            local_path: Optional[str] = None,
-            content: Optional[Union[bytes, str]] = None
+            *,
+            path: Optional[str] = None,
+            content: Optional[Union[bytes, str, io.BytesIO]] = None
     ) -> Dict[str, Any]:
         """
         uploads a file to the drive with the given name.
         """
+        if path and content:
+            raise ValueError("file_path and content both are not allowed in same time")
+
+        if not path and not content:
+            raise ValueError("path or content is required")
+
         return await self.__route._push_file(
-            drive_name=self.name, remote_path=file_name, local_path=local_path, content=content
+            drive_name=self.name,
+            remote_path=file_name,
+            file_path=path,
+            content=content
         )
 
-    async def download(self, file_name: str) -> io.BytesIO:
+    async def get(self, file_name: str) -> io.BytesIO:
         """
         downloads a file from the drive with the given name.
         """

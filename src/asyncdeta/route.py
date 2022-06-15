@@ -134,18 +134,19 @@ class Route:
         resp = await self.__session.delete(ep, headers=self.__base_headers, json=json_data)
         return await resp.json()
 
-    async def _push_file(self, drive_name: str, remote_path: str, local_path: str = None, content: Any = None):
+    async def _push_file(self, drive_name: str, remote_path: str, file_path: str = None, content: Any = None):
 
-        if local_path is not None:
-            data = open(local_path, 'rb')
+        if file_path:
+            with open(file_path, 'rb') as f:
+                fp = io.BytesIO(f.read())
         elif isinstance(content, str):
-            data = io.StringIO(content)
+            fp = io.StringIO(content)
         elif isinstance(content, bytes):
-            data = io.BytesIO(content)
+            fp = io.BytesIO(content)
         else:
-            raise ValueError('local_path or content must be specified')
+            fp = io.BytesIO(b'')
 
-        CONTENT_CHUNK = data.read()
+        CONTENT_CHUNK = fp.read()
 
         if not len(CONTENT_CHUNK) > self.__SINGLE_REQ_UPLOAD_SIZE:
             ep = self.__drive_root + drive_name + '/files?name=' + quote_plus(remote_path)
