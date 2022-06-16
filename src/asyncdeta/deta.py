@@ -20,13 +20,10 @@ class Deta:
             loop: asyncio.AbstractEventLoop = None
     ):
         """
-        creates a new session for Deta to make requests to the API
+        creates/assigns a session for Deta to make requests to the API
         """
-        if session is None:
-            if loop:
-                self.session = aiohttp.ClientSession(loop=loop)
-            else:
-                self.session = aiohttp.ClientSession()
+        if not session:
+            self.session = aiohttp.ClientSession(loop=loop)
         else:
             self.session = session
 

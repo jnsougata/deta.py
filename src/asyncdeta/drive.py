@@ -9,15 +9,23 @@ class _Drive:
         self.name = name
         self.__route = Route(deta)
 
-    async def files(self, limit: int = None) -> List[str]:
+    async def close(self):
+        await self.__route._close()
+
+    async def files(self, limit: Optional[int] = None, prefix: Optional[str] = None) -> List[str]:
         """
         fetches names of files in the drive.
         """
         if limit is None:
             container = []
 
-            async def recurse(last: Optional[str]):
-                data = await self.__route._fetch_file_list(drive_name=self.name, limit=None)
+            async def recurse(last: Optional[str] = None):
+                data = await self.__route._fetch_file_list(
+                    drive_name=self.name,
+                    limit=None,
+                    prefix=prefix,
+                    last=last
+                )
                 paging = data.get('paging')
                 if paging:
                     container.extend(data['names'])
@@ -28,7 +36,7 @@ class _Drive:
             return await recurse(None)
         else:
             return (
-                await self.__route._fetch_file_list(drive_name=self.name, limit=limit)
+                await self.__route._fetch_file_list(drive_name=self.name, limit=limit, prefix=prefix)
             )['names']
 
     async def delete(self, file_name: str) -> Dict[str, Any]:
