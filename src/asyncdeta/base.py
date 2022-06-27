@@ -60,18 +60,7 @@ class _Base:
         """
         fetches all key and values from given base.
         """
-        container = []
-
-        async def recurse(last: Optional[str] = None):
-            data = await self.__route._fetch_all(base_name=self.name, last=last)
-            last_resp = data['paging'].get('last')
-            if last_resp:
-                container.extend(data['items'])
-                await recurse(last_resp)
-            else:
-                container.extend(data['items'])
-                return container
-        return await recurse()
+        return await self.__route._fetch_all(base_name=self.name)
 
     async def put(
             self,
@@ -202,8 +191,8 @@ class _Base:
             *,
             limit: Optional[int] = None,
             last: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[Any]:
         """
         queries base with given query.
         """
-        return await self.__route._query(base_name=self.name, query_data=query._data, limit=limit, last=last)
+        return await self.__route._query(base_name=self.name, query=query._data, last=last, limit=limit)

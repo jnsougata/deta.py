@@ -38,13 +38,20 @@ class Route:
         if resp.status == 404:
             return None
 
-    async def _fetch_all(self, base_name: str, *, last: str = None):
+    async def _fetch_all(self, base_name: str):
         ep = self.__base_root + base_name + '/query'
-        _json = {'last': last}
-        resp = await self.__session.post(ep, headers=self.__base_headers, json=_json)
-        if resp.status == 200:
-            return await resp.json()
-        return None
+        container = []
+
+        async def recurse(last: Optional[str] = None):
+            data = await (await self.__session.post(ep, headers=self.__base_headers, json={'last': last})).json()
+            last_resp = data['paging'].get('last')
+            if last_resp:
+                container.extend(data['items'])
+                await recurse(last_resp)
+            else:
+                container.extend(data['items'])
+        await recurse()
+        return container
 
     async def _put(self, base_name: str, json_data: dict):
         ep = self.__base_root + base_name + '/items'
@@ -87,18 +94,38 @@ class Route:
         if resp.status == 400:
             raise BadRequest('invalid update payload')
 
-    async def _query(self, base_name: str, limit: int, last: str, query_data: dict):
+    async def _query(self, base_name: str, limit: Optional[int], last: Optional[str], query: dict):
         ep = self.__base_root + base_name + '/query'
+        if limit and limit > 1000:
+            raise ValueError('limit must be less or equal to 1000')
+        if limit and limit <= 0:
+            raise ValueError('limit must be greater than 0')
         if limit:
-            query_data['limit'] = int(limit)
+            query['limit'] = int(limit)
         if last:
-            query_data['last'] = str(last)
-        resp = await self.__session.post(ep, headers=self.__base_headers, json=query_data)
-        if resp.status == 200:
-            return await resp.json()
-        if resp.status == 400:
-            error_map = await resp.json()
-            raise BadRequest('\n'.join(error_map['errors']))
+            query['last'] = str(last)
+        container = []
+
+        async def recurse(last_result: Optional[str] = None):
+            resp_data = await (await self.__session.post(ep, headers=self.__base_headers, json=query)).json()
+            if not (resp_data.get('paging') and resp_data['paging'].get('last')):
+                return container.extend(resp_data['items'])
+            else:
+                container.extend(resp_data['items'])
+                await recurse(resp_data['paging']['last'])
+
+        if last and not limit:
+            await recurse(last)
+        elif not last and limit:
+            resp = await self.__session.post(ep, headers=self.__base_headers, json=query)
+            container.extend((await resp.json())['items'])
+        elif last and limit:
+            resp = await self.__session.post(ep, headers=self.__base_headers, json=query)
+            container.extend((await resp.json())['items'])
+        else:
+            await recurse()
+
+        return container
 
     async def _fetch_file_list(
             self,
@@ -146,11 +173,11 @@ class Route:
         else:
             fp = io.BytesIO(b'')
 
-        CONTENT_CHUNK = fp.read()
+        byte_chunk = fp.read()
 
-        if not len(CONTENT_CHUNK) > self.__SINGLE_REQ_UPLOAD_SIZE:
+        if not len(byte_chunk) > self.__SINGLE_REQ_UPLOAD_SIZE:
             ep = self.__drive_root + drive_name + '/files?name=' + quote_plus(remote_path)
-            resp = await self.__session.post(ep, headers=self.__drive_headers, data=CONTENT_CHUNK)
+            resp = await self.__session.post(ep, headers=self.__drive_headers, data=byte_chunk)
             if resp.status == 201:
                 return await resp.json()
             elif resp.status == 400:
@@ -164,12 +191,12 @@ class Route:
         resp = await self.__session.post(ep, headers=self.__drive_headers)
         if resp.status == 202:
             upload_id = (await resp.json())['upload_id']
-            CHUNKS = [
-                CONTENT_CHUNK[i:i+self.__SINGLE_REQ_UPLOAD_SIZE]
-                for i in range(0, len(CONTENT_CHUNK), self.__SINGLE_REQ_UPLOAD_SIZE)
+            chunked = [
+                byte_chunk[i:i+self.__SINGLE_REQ_UPLOAD_SIZE]
+                for i in range(0, len(byte_chunk), self.__SINGLE_REQ_UPLOAD_SIZE)
             ]
             uploads = []
-            for i, CHUNK in enumerate(CHUNKS[:-1]):
+            for i, CHUNK in enumerate(chunked[:-1]):
                 post_ep = (
                     f"{self.__drive_root}{drive_name}/uploads/{upload_id}/parts?name={remote_path}&part={i+1}"
                 )
@@ -189,7 +216,7 @@ class Route:
                         raise NotFound(self.__err(await resp.json()))
 
             patch_ep = f"{self.__drive_root}{drive_name}/uploads/{upload_id}?name={remote_path}"
-            resp = await self.__session.patch(patch_ep, headers=self.__drive_headers, data=CHUNKS[-1])
+            resp = await self.__session.patch(patch_ep, headers=self.__drive_headers, data=chunked[-1])
             if resp.status == 200:
                 return await resp.json()
             if resp.status == 400:

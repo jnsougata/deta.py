@@ -67,49 +67,60 @@ class Query:
             self._data = {'query': [payload]}
 
     @classmethod
-    def equals(cls, key: str, value: Any):
-        return cls({key: value})
+    def primary_key(cls, key: Optional[str] = None, *, prefix: Optional[str] = None):
+        if prefix and key:
+            raise ValueError('prefix and key cannot be used together')
+        elif key:
+            return cls({'key': key})
+        elif prefix:
+            return cls({"key?pfx": prefix})
+        else:
+            raise ValueError('key or prefix must be given and cannot be both None or empty string')
 
     @classmethod
-    def not_equals(cls, key: str, value: Any):
-        return cls({f'{key}?ne': value})
+    def equals(cls, field: Field):
+        return cls({field.name: field.value})
 
     @classmethod
-    def greater_than(cls, key: str, value: Union[int, float]):
-        return cls({f'{key}?gt': value})
+    def not_equals(cls, field: Field):
+        return cls({f'{field.name}?ne': field.value})
 
     @classmethod
-    def greater_equals(cls, key: str, value: Union[int, float]):
-        return cls({f'{key}?gte': value})
+    def greater_than(cls, filed: Field):
+        return cls({f'{filed.name}?gt': filed.value})
 
     @classmethod
-    def less_than(cls, key: str, value: Union[int, float]):
-        return cls({f'{key}?lt': value})
+    def greater_equals(cls, field: Field):
+        return cls({f'{field.name}?gte': field.value})
 
     @classmethod
-    def less_equals(cls, key: str, value: Union[int, float]):
-        return cls({f'{key}?lte': value})
+    def less_than(cls, field: Field):
+        return cls({f'{field.name}?lt': field.value})
 
     @classmethod
-    def in_range(cls, key: str, value: Union[int, float]):
-        return cls({f'{key}?r': value})
+    def less_equals(cls, field: Field):
+        return cls({f'{field.name}?lte': field.value})
 
     @classmethod
-    def contains(cls, key: str, value: Union[str, List[str]]):
-        return cls({f'{key}?contains': value})
+    def in_range(cls, field: Field):
+        return cls({f'{field.name}?r': field.value})
 
     @classmethod
-    def not_contains(cls, key: str, value: Union[str, List[str]]):
-        return cls({f'{key}?not_contains': value})
+    def contains(cls, field: Field):
+        return cls({f'{field.name}?contains': field.value})
 
     @classmethod
-    def starts_with(cls, key: str, value: Union[str, List[str]]):
-        return cls({f'{key}?pfx': value})
+    def not_contains(cls, field: Field):
+        return cls({f'{field.name}?not_contains': field.value})
 
     @classmethod
-    def and_ed(cls, *queries: Query):
+    def starts_with(cls, field: Field):
+        return cls({f'{field.name}?pfx': field.value})
+
+    @classmethod
+    def do_and(cls, *queries: Query):
         return cls({k: v for q in queries for k, v in q._data.items()})
 
     @classmethod
-    def or_ed(cls, *queries: Query):
+    def do_or(cls, *queries: Query):
         return cls([q._data['query'][0] for q in queries])
