@@ -53,9 +53,9 @@ Quick Start
         await base.put(key='test', field=Field(name='abc', value={'a': 1, 'b': 2}))
 
         # downloading a song stored in deta drive
-        resp = await drive.download(file_name='song.mp3')
+        resp = await drive.get(file_name='song.mp3')
         with open('song.mp3', 'wb') as f:
-            f.write(resp)
+            f.write(resp.read())
 
         # closing deta connection
         await deta.close()
