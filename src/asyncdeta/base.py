@@ -48,7 +48,7 @@ class _Base:
         """
         removes a field from an existing key.
         """
-        return await self.update(key=key, updates=[Update.remove([Field(field_name, None)])])
+        return await self.update(key=key, updates=[Update.remove([field_name])])
 
     async def fetch(self, key: str) -> Dict[str, Any]:
         """
@@ -62,7 +62,7 @@ class _Base:
         """
         container = []
 
-        async def recurse(last: Optional[str]):
+        async def recurse(last: Optional[str] = None):
             data = await self.__route._fetch_all(base_name=self.name, last=last)
             last_resp = data['paging'].get('last')
             if last_resp:
@@ -71,7 +71,7 @@ class _Base:
             else:
                 container.extend(data['items'])
                 return container
-        return await recurse(None)
+        return await recurse()
 
     async def put(
             self,
