@@ -38,9 +38,9 @@ class _Base:
         if field already exists, old value will be overwritten.
         """
         if not force:
-            return await self.update(key=key, updates=[Update.set([field])])
+            return await self.update(key, Update.set(field))
         try:
-            return await self.update(key=key, updates=[Update.set([field])])
+            return await self.update(key, Update.set(field))
         except NotFound:
             return await self.put(key=key, field=field)
 
@@ -48,7 +48,7 @@ class _Base:
         """
         removes a field from an existing key.
         """
-        return await self.update(key=key, updates=[Update.remove([field_name])])
+        return await self.update(key, Update.remove(field_name))
 
     async def fetch(self, key: str) -> Dict[str, Any]:
         """

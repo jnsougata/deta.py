@@ -196,12 +196,12 @@ class Route:
                 for i in range(0, len(byte_chunk), self.__SINGLE_REQ_UPLOAD_SIZE)
             ]
             uploads = []
-            for i, CHUNK in enumerate(chunked[:-1]):
+            for i, chunk in enumerate(chunked[:-1]):
                 post_ep = (
                     f"{self.__drive_root}{drive_name}/uploads/{upload_id}/parts?name={remote_path}&part={i+1}"
                 )
                 uploads.append(
-                    asyncio.create_task(self.__session.post(post_ep, headers=self.__drive_headers, data=CHUNK))
+                    asyncio.create_task(self.__session.post(post_ep, headers=self.__drive_headers, data=chunk))
                 )
             gathered = await asyncio.gather(*uploads)
             for item in gathered:

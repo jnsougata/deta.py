@@ -18,11 +18,11 @@ class Update:
         self._value = payload
 
     @classmethod
-    def set(cls, fields: List[Field]):
+    def set(cls, *fields: Field):
         return cls({'set': {field.name: field.value for field in fields}})
 
     @classmethod
-    def increment(cls, fields: List[Field]):
+    def increment(cls, *fields: Field):
         form = {}
         for filed in fields:
             if isinstance(filed.value, int) or isinstance(filed.value, float):
@@ -32,7 +32,7 @@ class Update:
         return cls({'increment': form})
 
     @classmethod
-    def append(cls, fields: List[Field]):
+    def append(cls, *fields: Field):
         form = {}
         for filed in fields:
             if isinstance(filed.value, list):
@@ -43,7 +43,7 @@ class Update:
         return cls({'append': form})
 
     @classmethod
-    def prepend(cls, fields: List[Field]):
+    def prepend(cls, *fields: Field):
         form = {}
         for filed in fields:
             if isinstance(filed.value, list):
@@ -54,8 +54,8 @@ class Update:
         return cls({'prepend': form})
 
     @classmethod
-    def remove(cls, field_names: List[str]):
-        return cls({'delete': [fields]})
+    def remove(cls, *field_names: str):
+        return cls({'delete': list(field_names)})
 
 
 class Query:
