@@ -84,9 +84,9 @@ class Route:
         if resp.status == 400:
             raise BadRequest('invalid insert payload')
 
-    async def _update(self, base_name: str, key: str, update_payload: dict):
+    async def _update(self, base_name: str, key: str, payload: dict):
         ep = self.__base_root + base_name + '/items/' + key
-        resp = await self.__session.patch(ep, headers=self.__base_headers, json=update_payload)
+        resp = await self.__session.patch(ep, headers=self.__base_headers, json=payload)
         if resp.status == 200:
             return await resp.json()
         if resp.status == 404:

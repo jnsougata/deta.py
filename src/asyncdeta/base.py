@@ -153,11 +153,11 @@ class _Base:
         """
         return await self.__route._delete(base_name=self.name, key=key)
 
-    async def delete_many(self, keys: List[str]) -> Dict[str, Any]:
+    async def delete_many(self, *keys: str) -> Dict[str, Any]:
         """
         removes multiple keys and their values from base with given keys.
         """
-        return await self.__route._delete_many(base_name=self.name, keys=keys)
+        return await self.__route._delete_many(base_name=self.name, keys=list(keys))
 
     async def insert(self, key: str, field: Field) -> Dict[str, Any]:
         """
@@ -166,24 +166,22 @@ class _Base:
         payload = {"item": {"key": str(key), field.name: field.value}}
         return await self.__route._insert(base_name=self.name, json_data=payload)
 
-    async def insert_many(self, key: str, fields: List[Field]) -> Dict[str, Any]:
+    async def insert_many(self, key: str, *fields: Field) -> Dict[str, Any]:
         """
         creates multiple fields to base with given key if any of fields with same key doesn't exist.
         Uses a single call to API.
         """
-        data = {field.name: field.value for field in fields}
-        data['key'] = str(key)
-        payload = {"item": data}
+        payload = {"key": str(key), "item": {field.name: field.value for field in fields}}
         return await self.__route._insert(base_name=self.name, json_data=payload)
 
-    async def update(self, key: str, updates: List[Update]) -> Dict[str, Any]:
+    async def update(self, key: str, *updates: Update) -> Dict[str, Any]:
         """
         updates a field only if a field with given key exists.
         """
         payload = {}
-        for update in updates:
-            payload.update(update._value)
-        return await self.__route._update(base_name=self.name, key=key, update_payload=payload)
+        for u in updates:
+            payload.update(u._value)
+        return await self.__route._update(base_name=self.name, key=key, payload=payload)
 
     async def query(
             self,
