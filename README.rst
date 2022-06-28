@@ -77,14 +77,14 @@ Base
    "remove_field(self, key: str, field_name: str)", "Dict[str, Any]", "Removes a field from an existing key."
    "fetch(key: str)", "Dict[str, Any]", "Fetches a single item from base by key."
    "fetch_all()", "List[Dict[str, Any]]", "Fetches all items from a base."
-   "put(key: str, field: Field)", "Dict[str, Any]", "Adds a field to base with given key. If key already exists, old value will be overwritten."
-   "put_many(key: str, fields: List[Field])", "List[Dict[str, Any]]", "Adds multiple fields to single key in a base. If key already exists, old value will be overwritten."
-   "put_bulk(key: str, fields: List[List[Field]])", "List[Dict[str, Any]]", "Adds multiple fields to multiple keys in a base. If keys already exist, old value will be overwritten."
+   "put(key: str, field: Field, *, expire_at: datetime = None, expire_after: Union[int, float] = None)", "Dict[str, Any]", "Adds a field to base with given key. If key already exists, old value will be overwritten."
+   "put_many(key: str, fields: List[Field], *, expire_at: datetime = None, expire_after: Union[int, float] = None)", "List[Dict[str, Any]]", "Adds multiple fields to single key in a base. If key already exists, old value will be overwritten."
+   "put_bulk(key: str, fields: List[List[Field]], *, expire_ats: List[datetime] = None, expire_afters: List[Union[int, float]] = None)", "List[Dict[str, Any]]", "Adds multiple fields to multiple keys in a base. If keys already exist, old value will be overwritten."
    "insert(key: str, field: Field)", "Dict[str, Any]", "Creates a field to base with given key if any field with same key doesn't exist."
    "insert_many(key: str, fields: List[Field])", "Dict[str, Any]", "Creates multiple fields to single key in a base if any field with same key doesn't exist."
    "update(key: str, updates: List[Update])", "Dict[str, Any]", "Updates a field only if a field with given key exists."
    "delete(key: str)", "Dict[str, Any]", "Deletes single key from a base."
-   "delete_many(keys: List[str])", "Dict[str, Any]", "Deletes multiple keys from a base."
+   "delete_many(*keys: tuple[str])", "Dict[str, Any]", "Deletes multiple keys from a base."
 
 Drive
 ~~~~~~
