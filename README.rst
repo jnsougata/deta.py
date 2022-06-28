@@ -1,9 +1,9 @@
-Async DETA
+asyncdeta
 ==========
 
-An async library to interact with deta.sh
+An async library to interact with deta.sh base & drive
 
-- `Discord <https://discord.gg/YAFGAaMrTC>`_
+- `Discord <https://discord.gg/bh99VTt9dH>`_
 - `GitHub <https://github.com/jnsougata>`_
 
 Table of Contents
