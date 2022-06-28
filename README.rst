@@ -94,6 +94,6 @@ Drive
 
    "files(limit: int = None, prefix: str = None)", "List[str]", "Fetches all filenames from a drive if limit is not specified"
    "delete(file_name: str)", "Dict[str, Any]", "Deletes a file from a drive by file name."
-   "delete_many(self, file_names: List[str])", "Dict[str, Any]", "Deletes multiple files from a drive by file names."
-   "upload(*, file_name: str, path: Optional[str] = None, content: Optional[Union[bytes, str]] = None)", "[Dict[str, Any]", "Uploads a file to a drive."
+   "delete_many(*file_names: tuple[str])", "Dict[str, Any]", "Deletes multiple files from a drive by file names."
+   "upload(file_name: str, *, path: str = None, content: Union[bytes, str] = None)", "Dict[str, Any]", "Uploads a file to a drive."
    "get(file_name: str)", "io.BytesIO", "Downloads a file from a drive by file name."

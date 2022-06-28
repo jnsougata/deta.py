@@ -45,11 +45,11 @@ class _Drive:
         """
         return await self.__route._bulk_delete_files(drive_name=self.name, keys=[file_name])
 
-    async def delete_many(self, file_names: List[str]) -> Dict[str, Any]:
+    async def delete_many(self, *file_names: str) -> Dict[str, Any]:
         """
         deletes multiple files from the drive with one request.
         """
-        return await self.__route._bulk_delete_files(drive_name=self.name, keys=file_names)
+        return await self.__route._bulk_delete_files(drive_name=self.name, keys=list(file_names))
 
     async def upload(
             self,
