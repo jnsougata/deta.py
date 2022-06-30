@@ -76,6 +76,7 @@ Base
    "add_field(key: str, field: Field, force: bool = False)", "Dict[str, Any]", "Adds a field to an existing key. If field already exists, old value will be overwritten."
    "remove_field(self, key: str, field_name: str)", "Dict[str, Any]", "Removes a field from an existing key."
    "fetch(key: str)", "Dict[str, Any]", "Fetches a single item from base by key."
+   "multi_fetch(*keys: str)", "List[Dict[str, Any]]", "Fetches multiple items from base."
    "fetch_all()", "List[Dict[str, Any]]", "Fetches all items from a base."
    "put(key: str, field: Field, *, expire_at: datetime = None, expire_after: Union[int, float] = None)", "Dict[str, Any]", "Adds a field to base with given key. If key already exists, old value will be overwritten."
    "put_many(key: str, fields: List[Field], *, expire_at: datetime = None, expire_after: Union[int, float] = None)", "List[Dict[str, Any]]", "Adds multiple fields to single key in a base. If key already exists, old value will be overwritten."
