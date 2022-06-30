@@ -100,14 +100,22 @@ class Route:
             raise ValueError('limit must be less or equal to 1000')
         if limit and limit <= 0:
             raise ValueError('limit must be greater than 0')
+        queries = []
+        if isinstance(query, list):
+            queries.extend(query)
+        else:
+            queries.append(query)
+        payload = {'query': queries}
         if limit:
-            query['limit'] = int(limit)
+            payload['limit'] = int(limit)
         if last:
-            query['last'] = str(last)
+            payload['last'] = str(last)
         container = []
 
         async def recurse(last_result: Optional[str] = None):
-            resp_data = await (await self.__session.post(ep, headers=self.__base_headers, json=query)).json()
+            resp_data = await (await self.__session.post(ep, headers=self.__base_headers, json=payload)).json()
+            if 'errors' in resp_data:
+                raise BadRequest(self.__err(resp_data)) from None
             if not (resp_data.get('paging') and resp_data['paging'].get('last')):
                 return container.extend(resp_data['items'])
             else:

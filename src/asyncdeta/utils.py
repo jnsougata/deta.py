@@ -61,10 +61,7 @@ class Update:
 class Query:
 
     def __init__(self, payload: Union[List[Dict[str, Any]], Dict[str, Any]]):
-        if isinstance(payload, list):
-            self._data = {'query': payload}
-        else:
-            self._data = {'query': [payload]}
+        self.payload = payload
 
     @classmethod
     def primary_key(cls, key: Optional[str] = None, *, prefix: Optional[str] = None):
@@ -119,8 +116,11 @@ class Query:
 
     @classmethod
     def do_and(cls, *queries: Query):
-        return cls({k: v for q in queries for k, v in q._data.items()})
+        q = {}
+        _ = {q.update(**query.payload) for query in queries}
+        return cls(q)
 
     @classmethod
     def do_or(cls, *queries: Query):
-        return cls([q._data['query'][0] for q in queries])
+        return cls([q.payload for q in queries])
+

@@ -193,4 +193,4 @@ class _Base:
         """
         queries base with given query.
         """
-        return await self.__route._query(base_name=self.name, query=query._data, last=last, limit=limit)
+        return await self.__route._query(base_name=self.name, query=query.payload, last=last, limit=limit)
