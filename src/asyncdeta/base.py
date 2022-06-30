@@ -1,7 +1,8 @@
-from typing import Union
-from datetime import datetime, timedelta
+import asyncio
 from .errors import *
+from typing import Union
 from .route import Route
+from datetime import datetime, timedelta
 from .utils import Field, Update, Query
 from typing import List, Dict, Any, Optional
 
@@ -54,7 +55,13 @@ class _Base:
         """
         fetches a single item from deta by key.
         """
-        return await self.__route._fetch(base_name=self.name, key=key)
+        return await self.__route._fetch(base_name=self.name, key=key[0])
+
+    async def multi_fetch(self, *keys: str) -> List[Dict[str, Any]]:
+        """
+        fetches multiple keys and values from given base.
+        """
+        return list(await asyncio.gather(*[self.__route._fetch(base_name=self.name, key=k) for k in keys]))
 
     async def fetch_all(self) -> List[Dict[str, Any]]:
         """
