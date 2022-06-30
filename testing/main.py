@@ -7,9 +7,7 @@ async def main():
     deta = Deta(os.getenv("DETA_TOKEN"))
     await deta.connect()
     base = deta.base("01PIXEL")
-    qs = await base.query(
-        Query.primary_key(prefix="1")
-    )
+    qs = await base.query(Query.equals(Field('key', '1')))
     print(qs)
     #print(await base.fetch_all())
     await deta.close()
