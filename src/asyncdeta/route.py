@@ -136,7 +136,7 @@ class Route:
     async def _fetch_file_list(
             self,
             drive_name: str,
-            limit: Optional[int],
+            limit: Optional[int] = None,
             prefix: str = None,
             last: str = None,
     ):
@@ -152,9 +152,7 @@ class Route:
         if last:
             tail += f'&last={last}'
         ep = self.__drive_root + drive_name + tail
-
         resp = await self.__session.get(ep, headers=self.__base_headers)
-
         if resp.status == 200:
             return await resp.json()
         if resp.status == 400:

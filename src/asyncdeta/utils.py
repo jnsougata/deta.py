@@ -123,4 +123,3 @@ class Query:
     @classmethod
     def do_or(cls, *queries: Query):
         return cls([q.payload for q in queries])
-

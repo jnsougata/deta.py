@@ -16,28 +16,33 @@ class _Drive:
         """
         fetches names of files in the drive.
         """
-        if limit is None:
-            container = []
+        def get_last(response: dict):
+            if response.get('paging') and response.get('paging').get('last'):
+                return response['paging']['last']
+            return None
 
-            async def recurse(last: Optional[str] = None):
-                data = await self.__route._fetch_file_list(
-                    drive_name=self.name,
-                    limit=None,
-                    prefix=prefix,
-                    last=last
-                )
-                paging = data.get('paging')
-                if paging:
-                    container.extend(data['names'])
-                    await recurse(paging.get('last'))
-                else:
-                    container.extend(data['names'])
-                    return container
-            return await recurse(None)
+        names = []
+        if not limit and not prefix:
+            ini_resp = await self.__route._fetch_file_list(drive_name=self.name)
+            names.extend(ini_resp['names'])
+            last = get_last(ini_resp)
+            while last:
+                resp = await self.__route._fetch_file_list(drive_name=self.name, last=last)
+                names.extend(resp['names'])
+                last = get_last(resp)
+        elif not limit and prefix:
+            ini_resp = await self.__route._fetch_file_list(drive_name=self.name, prefix=prefix)
+            names.extend(ini_resp['names'])
+            last = get_last(ini_resp)
+            while last:
+                resp = await self.__route._fetch_file_list(drive_name=self.name, last=last, prefix=prefix)
+                names.extend(resp['names'])
+                last = get_last(resp)
         else:
-            return (
-                await self.__route._fetch_file_list(drive_name=self.name, limit=limit, prefix=prefix)
-            )['names']
+            resp = await self.__route._fetch_file_list(drive_name=self.name, limit=limit, prefix=prefix)
+            names.extend(resp['names'])
+
+        return names
 
     async def delete(self, file_name: str) -> Dict[str, Any]:
         """
