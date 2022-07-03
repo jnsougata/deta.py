@@ -40,18 +40,15 @@ class Route:
 
     async def _fetch_all(self, base_name: str):
         ep = self.__base_root + base_name + '/query'
-        container = []
-
-        async def recurse(last: Optional[str] = None):
-            data = await (await self.__session.post(ep, headers=self.__base_headers, json={'last': last})).json()
-            last_resp = data['paging'].get('last')
-            if last_resp:
-                container.extend(data['items'])
-                await recurse(last_resp)
-            else:
-                container.extend(data['items'])
-        await recurse()
-        return container
+        items = []
+        ini_data = await (await self.__session.post(ep, headers=self.__base_headers)).json()
+        last = ini_data['paging'].get('last')
+        items.extend(ini_data['items'])
+        while last:
+            data = await (await self.__session.post(ep, headers=self.__base_headers, data={'last': last})).json()
+            items.extend(data['items'])
+            last = data['paging'].get('last')
+        return items
 
     async def _put(self, base_name: str, json_data: dict):
         ep = self.__base_root + base_name + '/items'
@@ -106,34 +103,35 @@ class Route:
         else:
             queries.append(query)
         payload = {'query': queries}
-        if limit:
-            payload['limit'] = int(limit)
-        if last:
-            payload['last'] = str(last)
-        container = []
-
-        async def recurse(last_result: Optional[str] = None):
-            resp_data = await (await self.__session.post(ep, headers=self.__base_headers, json=payload)).json()
-            if 'errors' in resp_data:
-                raise BadRequest(self.__err(resp_data)) from None
-            if not (resp_data.get('paging') and resp_data['paging'].get('last')):
-                return container.extend(resp_data['items'])
-            else:
-                container.extend(resp_data['items'])
-                await recurse(resp_data['paging']['last'])
-
+        items = []
         if last and not limit:
-            await recurse(last)
+            payload['last'] = last
+            ini_data = await (await self.__session.post(ep, headers=self.__base_headers, json=payload)).json()
+            items.extend(ini_data['items'])
+            last = ini_data['paging'].get('last')
+            while last:
+                data = await (await self.__session.post(ep, headers=self.__base_headers, json={'last': last})).json()
+                items.extend(data['items'])
+                last = data['paging'].get('last')
         elif not last and limit:
+            payload['limit'] = limit
             resp = await self.__session.post(ep, headers=self.__base_headers, json=query)
-            container.extend((await resp.json())['items'])
+            items.extend((await resp.json())['items'])
         elif last and limit:
-            resp = await self.__session.post(ep, headers=self.__base_headers, json=query)
-            container.extend((await resp.json())['items'])
+            payload['last'] = last
+            payload['limit'] = limit
+            resp = await (await self.__session.post(ep, headers=self.__base_headers, json=query)).json()
+            items.extend(resp['items'])
         else:
-            await recurse()
-
-        return container
+            ini_data = await (await self.__session.post(ep, headers=self.__base_headers, json=payload)).json()
+            items.extend(ini_data['items'])
+            last = ini_data['paging'].get('last')
+            while last:
+                payload['last'] = last
+                resp = await (await self.__session.post(ep, headers=self.__base_headers, json=payload)).json()
+                items.extend(resp['items'])
+                last = resp['paging'].get('last')
+        return items
 
     async def _fetch_file_list(
             self,
