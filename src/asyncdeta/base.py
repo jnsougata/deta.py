@@ -1,7 +1,7 @@
 import asyncio
 from .errors import *
 from typing import Union
-from .route import Route
+from .route import _Route
 from datetime import datetime, timedelta
 from .utils import Field, Update, Query
 from typing import List, Dict, Any, Optional
@@ -14,7 +14,7 @@ class _Base:
 
     def __init__(self, *, name: str, deta):
         self.name = name
-        self.__route = Route(deta)
+        self.__route = _Route(deta)
         self.__expiry_key = '__expires'
 
     def __str__(self):
