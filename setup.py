@@ -14,7 +14,7 @@ setup(
     description='async API wrapper for deta.sh',
     long_description=readme,
     long_description_content_type="text/x-rst",
-    url='https://github.com/jnsougata/async-deta',
+    url='https://github.com/jnsougata/deta',
     author='jnsougata',
     author_email='jnsougata@gmail.com',
     classifiers=[
@@ -36,6 +36,6 @@ setup(
     python_requires='>=3.8.0',
     install_requires=['aiohttp==3.8.1'],
     project_urls={
-        'Source': 'https://github.com/jnsougata/async-deta',
+        'Source': 'https://github.com/jnsougata/deta',
     },
 )

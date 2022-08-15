@@ -22,7 +22,7 @@ Installing
 
 .. code:: sh
 
-    pip install git+https://github.com/jnsougata/async-deta
+    pip install git+https://github.com/jnsougata/deta
 
 Quick Start
 --------------
