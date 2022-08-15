@@ -1,4 +1,4 @@
-asyncdeta
+deta
 ==========
 
 An async library to interact with deta.sh base & drive
