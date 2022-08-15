@@ -33,7 +33,7 @@ Quick Start
 
     import os
     import asyncio
-    from asyncdeta import Deta, Field
+    from deta import Deta, Field
 
 
     async def main():
