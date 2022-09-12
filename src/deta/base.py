@@ -55,7 +55,7 @@ class _Base:
         """
         fetches a single item from deta by key.
         """
-        return await self.__route._fetch(base_name=self.name, key=key[0])
+        return await self.__route._fetch(base_name=self.name, key=key)
 
     async def multi_fetch(self, *keys: str) -> List[Dict[str, Any]]:
         """
