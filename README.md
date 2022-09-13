@@ -23,37 +23,36 @@ pip install git+https://github.com/jnsougata/deta
 # Quick Start
 
 ```python
+import os
+import asyncio
+from deta import Deta, Field
 
-    import os
-    import asyncio
-    from deta import Deta, Field
 
+async def main():
 
-    async def main():
+    deta = Deta()
 
-        deta = Deta(os.getenv("PROJECT_KEY"))
+    # mandatory to assign a session
+    await deta.connect()
 
-        # mandatory to assign a session
-        await deta.connect()
+    # instantiating a drive
+    drive = deta.drive(name='test_123')
 
-        # instantiating a drive
-        drive = deta.drive(name='test_123')
+    # instantiating a base
+    base = deta.base(name='test_123')
 
-        # instantiating a base
-        base = deta.base(name='test_123')
+    # storing a json obj to deta base
+    await base.put(key='test', field=Field(name='abc', value={'a': 1, 'b': 2}))
 
-        # storing a json obj to deta base
-        await base.put(key='test', field=Field(name='abc', value={'a': 1, 'b': 2}))
+    # downloading a song stored in deta drive
+    resp = await drive.get(file_name='song.mp3')
+    with open('song.mp3', 'wb') as f:
+        f.write(resp.read())
 
-        # downloading a song stored in deta drive
-        resp = await drive.get(file_name='song.mp3')
-        with open('song.mp3', 'wb') as f:
-            f.write(resp.read())
+    # closing deta connection
+    await deta.close()
 
-        # closing deta connection
-        await deta.close()
-
-    asyncio.run(main())
+asyncio.run(main())
 ```
 
 # Usage

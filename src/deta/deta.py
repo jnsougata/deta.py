@@ -10,7 +10,7 @@ class Deta:
 
     def __init__(self, project_key: Optional[str] = None):
         self.session = None
-        self.token = project_key or os.getenv('DETA_ACCESS_TOKEN')
+        self.token = project_key or os.getenv('DETA_PROJECT_KEY')
         assert self.token, 'project key is required'
 
     async def connect(
