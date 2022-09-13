@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 here = pathlib.Path(__file__).parent.resolve()
 
-with open('README.rst') as f:
+with open('README.md') as f:
     readme = f.read()
 
 
