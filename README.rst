@@ -86,7 +86,7 @@ Drive
 ~~~~~~
 .. csv-table::
    :header: "Method", "Return Type"
-   :widths: 300, 100, 200
+   :widths: 300, 100
 
    "``files(limit: int = None, prefix: str = None)``"
    "``delete(*names: str)``", "Dict[str, Any]"
