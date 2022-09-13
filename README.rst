@@ -66,29 +66,29 @@ Usage
 Base
 ~~~~~~
 .. csv-table::
-   :header: "Method", "Return Type", "Description"
-   :widths: 200, 100, 200
+   :header: "Method", "Return Type"
+   :widths: 1000, 100
 
-   "add_field(key: str, field: Field, force: bool = False)", "Dict[str, Any]", "Adds a field to an existing key. If field already exists, old value will be overwritten."
-   "remove_field(self, key: str, field_name: str)", "Dict[str, Any]", "Removes a field from an existing key."
-   "fetch(key: str)", "Dict[str, Any]", "Fetches a single item from base by key."
-   "fetch_by_keys(*keys: str)", "List[Dict[str, Any]]", "Fetches multiple items from base."
-   "everything()", "List[Dict[str, Any]]", "Fetches all items from a base."
-   "put(key: str, field: Field, *, expire_at: datetime = None, expire_after: Union[int, float] = None)", "Dict[str, Any]", "Adds a field to base with given key. If key already exists, old value will be overwritten."
-   "put_many(key: str, fields: List[Field], *, expire_at: datetime = None, expire_after: Union[int, float] = None)", "List[Dict[str, Any]]", "Adds multiple fields to single key in a base. If key already exists, old value will be overwritten."
-   "put_bulk(key: str, fields: List[List[Field]], *, expire_ats: List[datetime] = None, expire_afters: List[Union[int, float]] = None)", "List[Dict[str, Any]]", "Adds multiple fields to multiple keys in a base. If keys already exist, old value will be overwritten."
-   "insert(key: str, field: Field)", "Dict[str, Any]", "Creates a field to base with given key if any field with same key doesn't exist."
-   "insert_many(key: str, fields: List[Field])", "Dict[str, Any]", "Creates multiple fields to single key in a base if any field with same key doesn't exist."
-   "update(key: str, updates: List[Update])", "Dict[str, Any]", "Updates a field only if a field with given key exists."
-   "delete(*keys: str)", "Dict[str, Any]", "Deletes key from a base."
+   "``add_field(key: str, field: Field, force: bool = False)``", "Dict[str, Any]"
+   "``remove_field(self, key: str, field_name: str)``", "Dict[str, Any]"
+   "``fetch(key: str)``", "Dict[str, Any]"
+   "``fetch_by_keys(*keys: str)``", "List[Dict[str, Any]]"
+   "``everything()``", "List[Dict[str, Any]]"
+   "``put(key: str, field: Field, *, expire_at: datetime = None, expire_after: Union[int, float] = None)``", "Dict[str, Any]"
+   "``put_many(key: str, fields: List[Field], *, expire_at: datetime = None, expire_after: Union[int, float] = None)``", "Dict[str, Any]"
+   "``put_bulk(key: str, fields: List[List[Field]], *, expire_ats: List[datetime] = None, expire_afters: List[Union[int, float]] = None)``", "List[Dict[str, Any]]"
+   "``insert(key: str, field: Field)``", "Dict[str, Any]"
+   "``insert_many(key: str, fields: List[Field])``", "Dict[str, Any]"
+   "``update(key: str, updates: List[Update])``", "Dict[str, Any]"
+   "``delete(*keys: str)``", "Dict[str, Any]"
 
 Drive
 ~~~~~~
 .. csv-table::
    :header: "Method", "Return Type"
-   :widths: 300, 100
+   :widths: 1000, 100
 
-   "``files(limit: int = None, prefix: str = None)``"
+   "``files(limit: int = None, prefix: str = None)``", "List[Dict[str, Any]]"
    "``delete(*names: str)``", "Dict[str, Any]"
-   "``upload(content: [str | bytes], name: str)``"
+   "``upload(content: [str | bytes], name: str)``", "Dict[str, Any]"
    "``get(name: str)``", "io.BytesIO"
