@@ -15,7 +15,7 @@ def dict_to_field(payload: Dict[str, Any]) -> List[Field]:
 class Update:
 
     def __init__(self, payload: Any):
-        self._value = payload
+        self.value: Dict[str, Any] = payload
 
     @classmethod
     def set(cls, *fields: Field):
@@ -61,18 +61,15 @@ class Update:
 class Query:
 
     def __init__(self, payload: Union[List[Dict[str, Any]], Dict[str, Any]]):
-        self.payload = payload
+        self.value = payload
 
     @classmethod
-    def primary_key(cls, key: Optional[str] = None, *, prefix: Optional[str] = None):
-        if prefix and key:
-            raise ValueError('prefix and key cannot be used together')
-        elif key:
-            return cls({'key': key})
-        elif prefix:
-            return cls({"key?pfx": prefix})
-        else:
-            raise ValueError('key or prefix must be given and cannot be both None or empty string')
+    def key(cls, key: str):
+        return cls({'key': key})
+
+    @classmethod
+    def key_prefix(cls, prefix: str):
+        return cls({"key?pfx": prefix})
 
     @classmethod
     def equals(cls, field: Field):
@@ -115,11 +112,10 @@ class Query:
         return cls({f'{field.name}?pfx': field.value})
 
     @classmethod
-    def do_and(cls, *queries: Query):
-        q = {}
-        _ = {q.update(**query.payload) for query in queries}
+    def __and__(cls, *queries: Query):
+        q = {key: value for query in queries for key, value in query.value.items()}
         return cls(q)
 
     @classmethod
-    def do_or(cls, *queries: Query):
-        return cls([q.payload for q in queries])
+    def __or__(cls, *queries: Query):
+        return cls([q.value for q in queries])
