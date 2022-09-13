@@ -85,10 +85,10 @@ Base
 Drive
 ~~~~~~
 .. csv-table::
-   :header: "Method", "Return Type", "Description"
+   :header: "Method", "Return Type"
    :widths: 300, 100, 200
 
-   "``files(limit: int = None, prefix: str = None)``", "List[str]", "Fetches all filenames from a drive if limit is not specified"
-   "``delete(*names: str)``", "Dict[str, Any]", "Deletes file from a drive by file name."
-   "``upload(content: [str | bytes], name: str)``", "Dict[str, Any]", "Uploads a file to a drive."
-   "``get(name: str)``", "io.BytesIO", "Downloads a file from a drive by file name."
+   "``files(limit: int = None, prefix: str = None)``"
+   "``delete(*names: str)``", "Dict[str, Any]"
+   "``upload(content: [str | bytes], name: str)``"
+   "``get(name: str)``", "io.BytesIO"
