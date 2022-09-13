@@ -14,7 +14,7 @@ An async library to interact with deta.sh base & drive
 
 # Installing
 
-**Python 3.6 or higher is required**
+**Recommended:** Python 3.8.0 or higher
 
 ```shell
 pip install git+https://github.com/jnsougata/deta
