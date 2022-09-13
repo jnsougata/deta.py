@@ -89,6 +89,6 @@ asyncio.run(main())
 - `delete(*names: str)`
   - **Returns:** Dict[str, Any]
 - `upload(content: [str | bytes], name: str)` 
-- **Returns:** Dict[str, Any]
+  - **Returns:** Dict[str, Any]
 - `get(name: str)`
   - **Returns:** io.BytesIO"
