@@ -3,7 +3,7 @@ from .errors import *
 from typing import Union
 from .route import _Route
 from datetime import datetime, timedelta
-from .utils import Field, Update, Query
+from .utils import Field, _Update, _Query, Set, Delete
 from typing import List, Dict, Any, Optional
 
 
@@ -30,103 +30,58 @@ class _Base:
         else:
             return (datetime.now() + timedelta(seconds=time_value)).replace(microsecond=0).timestamp()
 
-    async def add_field(self, key: str, field: Field, force: bool = False) -> Dict[str, Any]:
-        """
-        adds a field to an existing key.
-        if field already exists, old value will be overwritten.
-        """
-        if not force:
-            return await self.update(key, Update.set(field))
-        try:
-            return await self.update(key, Update.set(field))
-        except NotFound:
-            return await self.put(key=key, field=field)
+    async def add_field(self, key: str, *fields: Field) -> Dict[str, Any]:
+        return await self.update(key, Set(*fields))
 
-    async def remove_field(self, key: str, field_name: str) -> Dict[str, Any]:
-        return await self.update(key, Update.remove(field_name))
+    async def delete_field(self, key: str, *field_names: str) -> Dict[str, Any]:
+        return await self.update(key, Delete(*field_names))
 
-    async def fetch(self, key: str) -> Dict[str, Any]:
-        return await self._route.fetch(base_name=self.name, key=key)
+    async def get(self, key: str) -> Dict[str, Any]:
+        return await self._route.get(self.name, key)
 
-    async def fetch_by_keys(self, *keys: str) -> List[Dict[str, Any]]:
-        return list(await asyncio.gather(*[self._route.fetch(base_name=self.name, key=k) for k in keys]))
+    async def get_multiple(self, *keys: str) -> List[Dict[str, Any]]:
+        return list(await asyncio.gather(*[self._route.get(self.name, k) for k in keys]))
 
-    async def everything(self) -> List[Dict[str, Any]]:
-        return await self._route.fetch_all(base_name=self.name)
+    async def records(self) -> List[Dict[str, Any]]:
+        return await self._route.fetch_all(self.name)
 
     async def put(
             self,
             key: str,
-            field: Field,
-            *,
+            *fields: Field,
             expire_at: datetime = None,
             expire_after: Union[int, float] = None,
     ) -> Dict[str, Any]:
-        """
-        adds a field to base with given key.
-        if key already exists, old value will be overwritten.
-        """
-        payload = {"items": [{"key": str(key), field.name: field.value}]}
+        assert key == "", "key cannot be empty string"
+        data = {field.name: field.value for field in fields}
+        data['key'] = str(key)
         if expire_at:
             payload['items'][0][self._expiry_key] = self.__time_to_expiry(expire_at)
         elif expire_after:
             payload['items'][0][self._expiry_key] = self.__time_to_expiry(expire_after)
-        return await self._route.put(base_name=self.name, json_data=payload)
+        return await self._route.put(self.name, {"items": [data]})
 
-    async def put_many(
-            self,
-            key: str,
-            fields: List[Field],
-            *,
-            expire_at: datetime = None,
-            expire_after: Union[int, float] = None,
-    ) -> Dict[str, Any]:
-        """
-        adds multiple field to base with given single key.
-        if key already exists, old value will be overwritten.
-        """
-        data = {field.name: field.value for field in fields}
-        data['key'] = str(key)
-        if expire_at:
-            data[self._expiry_key] = self.__time_to_expiry(expire_at)
-        elif expire_after:
-            data[self._expiry_key] = self.__time_to_expiry(expire_after)
-        payload = {"items": [data]}
-        return await self._route.put(base_name=self.name, json_data=payload)
-
-    async def put_bulk(
+    async def put_multiple(
             self,
             keys: List[str],
-            fields: List[List[Field]],
-            *,
+            *fields: List[Field],
             expire_ats: List[datetime] = None,
             expire_afters: List[Union[int, float]] = None,
     ) -> Dict[str, Any]:
-        """
-        adds multiple fields to base with given multiple keys.
-        if any key already exists, old value will be overwritten.
-        """
-        if len(keys) > 25:
-            raise ValueError("bulk insert is limited to 25 keys")
-
-        if len(keys) != len(fields):
-            raise ValueError("keys and bulk_fields must be the same in length")
-
-        if expire_ats and len(expire_ats) != len(keys):
-            raise ValueError("expire_ats and keys must be the same in length")
-
-        if expire_afters and len(expire_afters) != len(keys):
-            raise ValueError("expire_afters and keys must be the same in length")
-
+        assert len(keys) == len(fields), "keys and fields must be of same length"
+        assert len(keys) <= 25, "cannot put more than 25 items at once"
+        assert not (expire_ats and expire_afters), "cannot use both expire_ats and expire_afters"
+        assert len(keys) == len(expire_ats) if expire_ats else True, "keys and expire_ats must be of same length"
+        assert len(keys) == len(expire_afters) if expire_afters else True, "keys and expire_afters must be of same length"
         if expire_ats:
-            timer_list = [self.__time_to_expiry(expire_at) for expire_at in expire_ats]
+            expiry = [self.__time_to_expiry(expire_at) for expire_at in expire_ats]
         elif expire_afters:
-            timer_list = [self.__time_to_expiry(expire_after) for expire_after in expire_afters]
+            expiry = [self.__time_to_expiry(expire_after) for expire_after in expire_afters]
         else:
-            timer_list = None
+            expiry = None
         form = []
-        if timer_list:
-            for key, fields, time in zip(keys, fields, timer_list):
+        if expiry:
+            for key, fields, time in zip(keys, fields, expiry):
                 data = {field.name: field.value for field in fields}
                 data['key'] = str(key)
                 data[self._expiry_key] = time
@@ -136,8 +91,7 @@ class _Base:
                 data = {field.name: field.value for field in fields}
                 data['key'] = str(key)
                 form.append(data)
-        payload = {"items": form}
-        return await self._route.put(base_name=self.name, json_data=payload)
+        return await self._route.put(self.name, {"items": form})
 
     async def delete(self, *keys: str) -> Union[Dict[str, Any] | List[Dict[str, Any]]]:
         if len(keys) == 1:
@@ -145,11 +99,7 @@ class _Base:
         else:
             return await self._route.delete_many(self.name, list(keys))
 
-    async def insert(self, key: str, field: Field) -> Dict[str, Any]:
-        return await self._route.insert(
-            self.name, {"item": {"key": str(key), field.name: field.value}})
-
-    async def insert_many(self, key: str, *fields: Field) -> Dict[str, Any]:
+    async def insert(self, key: str, *fields: Field) -> Dict[str, Any]:
         return await self._route.insert(
             self.name,
             {
@@ -158,11 +108,12 @@ class _Base:
             }
         )
 
-    async def update(self, key: str, *updates: Update) -> Dict[str, Any]:
+    async def update(self, key: str, *updates: _Update) -> Dict[str, Any]:
         payload = {}
         for u in updates:
             payload.update(**u.value)
-        return await self._route.update(base_name=self.name, key=key, payload=payload)
+        return await self._route.update(self.name, str(key), payload)
 
-    async def query(self, query: Query, *, limit: Optional[int] = None, last: Optional[str] = None) -> List[Any]:
-        return await self._route.query(self.name, limit, last, query.value)
+    async def fetch(self, *queries: _Query, limit: Optional[int] = None, last: Optional[str] = None) -> List[Any]:
+        translated = [q.value for q in queries]
+        return await self._route.fetch(self.name, limit, last, translated)

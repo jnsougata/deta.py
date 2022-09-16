@@ -3,119 +3,147 @@ from typing import List, Dict, Any, Union, Optional
 
 
 class Field:
-    def __init__(self, name: str, value: Optional[Union[int, str, bool, float, list, Dict[str, Any]]]):
+    def __init__(self, name: str, value: Any = None):
         self.name = name
         self.value = value
 
-
-def dict_to_field(payload: Dict[str, Any]) -> List[Field]:
-    return [Field(key, value) for key, value in payload.items()]
-
-
-class Update:
-
-    def __init__(self, payload: Any):
-        self.value: Dict[str, Any] = payload
+    def dict(self) -> Dict[str, Any]:
+        return {self.name: self.value}
 
     @classmethod
-    def set(cls, *fields: Field):
-        return cls({'set': {field.name: field.value for field in fields}})
-
-    @classmethod
-    def increment(cls, *fields: Field):
-        form = {}
-        for filed in fields:
-            if isinstance(filed.value, int) or isinstance(filed.value, float):
-                form[filed.name] = filed.value
-            else:
-                raise TypeError('increment value must be int or float')
-        return cls({'increment': form})
-
-    @classmethod
-    def append(cls, *fields: Field):
-        form = {}
-        for filed in fields:
-            if isinstance(filed.value, list):
-                form[filed.name] = filed.value
-            else:
-                raise TypeError('append value must be list')
-
-        return cls({'append': form})
-
-    @classmethod
-    def prepend(cls, *fields: Field):
-        form = {}
-        for filed in fields:
-            if isinstance(filed.value, list):
-                form[filed.name] = filed.value
-            else:
-                raise TypeError('prepend value must be list')
-
-        return cls({'prepend': form})
-
-    @classmethod
-    def remove(cls, *field_names: str):
-        return cls({'delete': list(field_names)})
+    def from_dict(cls, data: Dict[str, Any]) -> List[Field]:
+        return [cls(name=k, value=v) for k, v in data.items()]
 
 
-class Query:
+class _Update:
 
-    def __init__(self, payload: Union[List[Dict[str, Any]], Dict[str, Any]]):
+    def __init__(self, payload: Dict[str, Any]):
         self.value = payload
 
-    @classmethod
-    def key(cls, key: str):
-        return cls({'key': key})
 
-    @classmethod
-    def key_prefix(cls, prefix: str):
-        return cls({"key?pfx": prefix})
+class Set(_Update):
+    def __init__(self, *fields: Field):
+        super().__init__({'set': {field.name: field.value for field in fields}})
 
-    @classmethod
-    def equals(cls, field: Field):
-        return cls({field.name: field.value})
 
-    @classmethod
-    def not_equals(cls, field: Field):
-        return cls({f'{field.name}?ne': field.value})
+class Increment(_Update):
+    def __init__(self, *fields: Field):
+        form = {}
+        for field in fields:
+            if isinstance(field.value, int) or isinstance(field.value, float):
+                form.update(field.dict())
+            else:
+                raise TypeError('increment value must be int or float')
+        super().__init__({'increment': form})
 
-    @classmethod
-    def greater_than(cls, filed: Field):
-        return cls({f'{filed.name}?gt': filed.value})
 
-    @classmethod
-    def greater_equals(cls, field: Field):
-        return cls({f'{field.name}?gte': field.value})
+class Append(_Update):
+    def __init__(self, *fields: Field):
+        form = {}
+        for field in fields:
+            if isinstance(field.value, list):
+                form.update(field.dict())
+            else:
+                raise TypeError('append value must be list')
+        super().__init__({'append': form})
 
-    @classmethod
-    def less_than(cls, field: Field):
-        return cls({f'{field.name}?lt': field.value})
 
-    @classmethod
-    def less_equals(cls, field: Field):
-        return cls({f'{field.name}?lte': field.value})
+class Prepend(_Update):
+    def __init__(self, *fields: Field):
+        form = {}
+        for field in fields:
+            if isinstance(field.value, list):
+                form.update(field.dict())
+            else:
+                raise TypeError('prepend value must be list')
+        super().__init__({'prepend': form})
 
-    @classmethod
-    def in_range(cls, field: Field):
-        return cls({f'{field.name}?r': field.value})
 
-    @classmethod
-    def contains(cls, field: Field):
-        return cls({f'{field.name}?contains': field.value})
+class Delete(_Update):
+    def __init__(self, *fields: str):
+        super().__init__({'delete': list(fields)})
 
-    @classmethod
-    def not_contains(cls, field: Field):
-        return cls({f'{field.name}?not_contains': field.value})
 
-    @classmethod
-    def starts_with(cls, field: Field):
-        return cls({f'{field.name}?pfx': field.value})
+class _Query:
 
-    @classmethod
-    def __and__(cls, *queries: Query):
-        q = {key: value for query in queries for key, value in query.value.items()}
-        return cls(q)
+    def __init__(self, payload: Union[Dict[str, Any]]):
+        self.value = payload
 
-    @classmethod
-    def __or__(cls, *queries: Query):
-        return cls([q.value for q in queries])
+
+class KeyQuery(_Query):
+    def __init__(self, key: str):
+        super().__init__({'key': key})
+
+
+class PrefixQuery(_Query):
+    def __init__(self, prefix: str):
+        super().__init__({'key?pfx': prefix})
+
+
+class EqualsQuery(_Query):
+    def __init__(self, field: str, value: Any):
+        super().__init__({field: value})
+
+
+class NotEqualsQuery(_Query):
+    def __init__(self, field: str, value: Any):
+        super().__init__({f'{field}?ne': value})
+
+
+class GreaterThanQuery(_Query):
+    def __init__(self, field: str, value: Any):
+        super().__init__({f'{field}?gt': field})
+
+
+class GreaterEqualsQuery(_Query):
+    def __init__(self, field: str, value: Any):
+        super().__init__({f'{field}?gte': value})
+
+
+class LessThanQuery(_Query):
+    def __init__(self, field: str, value: Any):
+        super().__init__({f'{field}?lt': value})
+
+
+class LessEqualsQuery(_Query):
+    def __init__(self, field: str, value: Any):
+        super().__init__({f'{field}?lte': value})
+
+
+class InRangeQuery(_Query):
+    def __init__(self, field: str, value: List[Union[int, float]]):
+        super().__init__({f'{field.name}?r': value})
+
+
+class ContainsQuery(_Query):
+    def __init__(self, field: str, value: Union[List[Any], str]):
+        super().__init__({f'{field}?contains': value})
+
+
+class NotContainsQuery(_Query):
+    def __init__(self, field: str, value: Union[List[Any], str]):
+        super().__init__({f'{field}?not_contains': value})
+
+
+class StartsWithQuery(_Query):
+    def __init__(self, field: str, value: str):
+        super().__init__({f'{field}?pfx': value})
+
+
+class AND(_Query):
+    def __init__(self, *queries: _Query):
+        super().__init__({key: value for query in queries for key, value in query.value.items()})
+
+
+class OR:
+    def __init__(self, *batches: List[_Query]):
+        self.value = []
+        children = []
+        reference = [[i] for i in batches[0]]
+        for batch in batches[1:]:
+            for i in batch:
+                for r in reference:
+                    children.append(r + [i])
+            reference = children
+            children = []
+        self.value = list(set([AND(*r) for r in reference]))

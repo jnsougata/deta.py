@@ -33,16 +33,16 @@ class _Route:
     async def close(self):
         await self.session.close()
 
-    async def fetch(self, base_name: str, key: str):
-        ep = self.base_url + base_name + '/items/' + key
+    async def get(self, name: str, key: str):
+        ep = self.base_url + name + '/items/' + key
         resp = await self.session.get(ep, headers=self.base_headers)
         if resp.status == 200:
             return await resp.json()
         if resp.status == 404:
             return None
 
-    async def fetch_all(self, base_name: str):
-        ep = self.base_url + base_name + '/query'
+    async def fetch_all(self, name: str):
+        ep = self.base_url + name + '/query'
         items = []
         ini_data = await (await self.session.post(ep, headers=self.base_headers)).json()
         last = ini_data['paging'].get('last')
@@ -53,9 +53,9 @@ class _Route:
             last = data['paging'].get('last')
         return items
 
-    async def put(self, base_name: str, json_data: dict):
-        ep = self.base_url + base_name + '/items'
-        resp = await self.session.put(ep, headers=self.base_headers, json=json_data)
+    async def put(self, name: str, payload: dict):
+        ep = self.base_url + name + '/items'
+        resp = await self.session.put(ep, headers=self.base_headers, json=payload)
         if resp.status == 207:
             data = await resp.json()
             if 'failed' in data:
@@ -65,18 +65,18 @@ class _Route:
             raise BadRequest(e['errors'][0])
         return await resp.json()
 
-    async def delete(self, base_name: str, key: str):
-        ep = self.base_url + base_name + '/items/' + key
+    async def delete(self, name: str, key: str):
+        ep = self.base_url + name + '/items/' + key
         await self.session.delete(ep, headers=self.base_headers)
         return key
 
-    async def delete_many(self, base_name: str, keys: list):
-        task = [asyncio.create_task(self.delete(base_name, key)) for key in keys]
+    async def delete_many(self, name: str, keys: list):
+        task = [asyncio.create_task(self.delete(name, key)) for key in keys]
         return await asyncio.gather(*task)
 
-    async def insert(self, base_name: str, json_data: dict):
-        ep = self.base_url + base_name + '/items'
-        resp = await self.session.post(ep, headers=self.base_headers, json=json_data)
+    async def insert(self, name: str, payload: dict):
+        ep = self.base_url + name + '/items'
+        resp = await self.session.post(ep, headers=self.base_headers, json=payload)
         if resp.status == 201:
             return await resp.json()
         if resp.status == 409:
@@ -84,8 +84,8 @@ class _Route:
         if resp.status == 400:
             raise BadRequest('invalid insert payload')
 
-    async def update(self, base_name: str, key: str, payload: dict):
-        ep = self.base_url + base_name + '/items/' + key
+    async def update(self, name: str, key: str, payload: dict):
+        ep = self.base_url + name + '/items/' + key
         resp = await self.session.patch(ep, headers=self.base_headers, json=payload)
         if resp.status == 200:
             return await resp.json()
@@ -94,17 +94,12 @@ class _Route:
         if resp.status == 400:
             raise BadRequest('invalid update payload')
 
-    async def query(self, base_name: str, limit: Optional[int], last: Optional[str], query: dict):
-        ep = self.base_url + base_name + '/query'
+    async def fetch(self, name: str, limit: Optional[int], last: Optional[str], queries: list[dict]):
+        ep = self.base_url + name + '/query'
         if limit and limit > 1000:
             raise ValueError('limit must be less or equal to 1000')
         if limit and limit <= 0:
             raise ValueError('limit must be greater than 0')
-        queries = []
-        if isinstance(query, list):
-            queries.extend(query)
-        else:
-            queries.append(query)
         payload = {'query': queries}
         items = []
         if last and not limit:
