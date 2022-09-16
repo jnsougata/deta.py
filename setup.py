@@ -10,7 +10,7 @@ with open('README.md') as f:
 
 setup(
     name='deta',
-    version='0.0.2',
+    version='0.0.3',
     description='async API wrapper for deta.sh',
     long_description=readme,
     long_description_content_type="text/x-rst",

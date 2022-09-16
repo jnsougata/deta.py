@@ -11,6 +11,8 @@ An async library to interact with deta.sh base & drive
 - [Usage](#usage)
 - [Base](#base)
 - [Drive](#drive)
+- [Query](#queries)
+- [Update](#updates)
 
 # Installing
 
@@ -83,3 +85,28 @@ if __name__ == '__main__':
   - **Returns:** Dict[str, Any]
 - `get(name: str)`
   - **Returns:** io.BytesIO"
+
+# Queries
+- Base class **_Query**
+  - `KeyQuery`
+  - `PrefixQuery`
+  - `EqualsQuery`
+  - `NotEqualsQuery`
+  - `GreaterThanQuery`
+  - `GreaterEqualsQuery`
+  - `LessThanQuery`
+  - `LessEqualsQuery`
+  - `ContainsQuery`
+  - `NotContainsQuery`
+  - `InRangeQuery`
+  - `NotInRangeQuery`
+  - `StartsWithQuery`
+  - `AND`
+
+# Updates
+- Base class **_Update**
+  - `Set`
+  - `Delete`
+  - `Increment`
+  - `Append`
+  - `Prepend`
