@@ -51,6 +51,14 @@ if __name__ == '__main__':
     asyncio.run(main())
 ```
 
+# Async Context Manager
+```python
+async def main():
+    async with Deta() as d:
+        base = d.base('01PIXEL')
+        print(await base.records())
+```
+
 # Usage
 
 # Base
@@ -106,6 +114,6 @@ if __name__ == '__main__':
 - Base class **_Update**
   - `Set`
   - `Delete`
-  - `Increment`
   - `Append`
   - `Prepend`
+  - `Increment`
