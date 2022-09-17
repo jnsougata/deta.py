@@ -18,13 +18,13 @@ class _Route:
     DRIVE = 'https://drive.deta.sh/v1'
     MAX_UPLOAD_SIZE = 10485760  # 10MB
 
-    def __init__(self, deta):
-        self.session = deta.session
-        self.pid = deta.token.split('_')[0]
+    def __init__(self, project_key: str, session: aiohttp.ClientSession):
+        self.session = session
+        self.pid = project_key.split('_')[0]
         self.base_url = f'{self.BASE}/{self.pid}/'
         self.drive_url = f'{self.DRIVE}/{self.pid}/'
-        self.base_headers = {'X-API-Key': deta.token, 'Content-Type': self.MIME_TYPE}
-        self.drive_headers = {'X-API-Key': deta.token, 'Content-Type': self.CONTENT_TYPE}
+        self.base_headers = {'X-API-Key': project_key, 'Content-Type': self.MIME_TYPE}
+        self.drive_headers = {'X-API-Key': project_key, 'Content-Type': self.CONTENT_TYPE}
 
     @staticmethod
     def fmt_error(emap: dict) -> str:
@@ -217,7 +217,7 @@ class _Route:
         else:
             raise Exception(self.fmt_error(final))
 
-    async def get_file(self, *, drive: str, name: str) -> bytes:
+    async def get_file(self, *, drive: str, name: str) -> aiohttp.ClientResponse:
         ep = self.drive_url + drive + f'/files/download?name={quote_plus(name)}'
         resp = await self.session.get(ep, headers=self.drive_headers)
         if resp.status == 200:

@@ -1,20 +1,17 @@
 import asyncio
 from .errors import *
+from aiohttp import ClientSession
 from typing import Union
 from .route import _Route
 from datetime import datetime, timedelta
-from .utils import Field, _Update, _Query, Set, Delete
 from typing import List, Dict, Any, Optional
-
-
-__all__ = ['_Base']
+from .utils import Field, _Update, _Query, Set, Delete
 
 
 class _Base:
-
-    def __init__(self, *, name: str, deta):
+    def __init__(self, name: str, project_key: str, session: ClientSession):
         self.name = name
-        self._route = _Route(deta)
+        self._route = _Route(project_key, session)
         self._expiry_key = '__expires'
 
     def __str__(self):
@@ -68,8 +65,8 @@ class _Base:
             expire_ats: List[datetime] = None,
             expire_afters: List[Union[int, float]] = None,
     ) -> Dict[str, Any]:
-        assert len(keys) == len(fields), "keys and fields must be of same length"
         assert len(keys) <= 25, "cannot put more than 25 items at once"
+        assert len(keys) == len(fields), "keys and fields must be of same length"
         assert not (expire_ats and expire_afters), "cannot use both expire_ats and expire_afters"
         assert len(keys) == len(expire_ats) if expire_ats else True, "keys and expire_ats must be of same length"
         assert len(keys) == len(expire_afters) if expire_afters else True, "keys and expire_afters must be of same length"

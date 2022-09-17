@@ -1,13 +1,14 @@
 import io
+from aiohttp import ClientSession
 from .route import _Route, PathLike
 from typing import List, Dict, Optional, Union, Any
 
 
 class _Drive:
 
-    def __init__(self, *, name: str, deta):
+    def __init__(self, name: str, project_key: str, session: ClientSession):
         self.name = name
-        self._route = _Route(deta)
+        self._route = _Route(project_key, session)
 
     async def close(self):
         await self._route.close()
