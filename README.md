@@ -25,7 +25,6 @@ pip install git+https://github.com/jnsougata/deta
 # Quick Start
 
 ```python
-import os
 import asyncio
 from deta import Deta, Field
 
@@ -57,7 +56,7 @@ if __name__ == '__main__':
 # Base
 - `add_field(key: str, field: Field, force: bool = False)` 
   - **Returns:** Dict[str, Any]
-- `delete_field(self, key: str, field_name: str)` 
+- `delete_field(self, key: str, *field_names: str)` 
   - **Returns:** Dict[str, Any]
 - `get(key: str)`
   - **Returns:** Dict[str, Any]
@@ -67,7 +66,7 @@ if __name__ == '__main__':
   - **Returns:** List[Dict[str, Any]]
 - `put(key: str, *fields: Field, expire_at: datetime = None, expire_after: Union[int, float] = None)`
   - **Returns:** Dict[str, Any]
-- `put_multiple(key: str, *fields: List[Field], expire_ats: List[datetime] = None, expire_afters: List[Union[int, float]] = None)`
+- `put_multiple(keys: List[str], *fields: List[Field], expire_ats: List[datetime] = None, expire_afters: List[Union[int, float]] = None)`
   - **Returns:** List[Dict[str, Any]]
 - `insert(key: str, *fields: Field)`
   - **Returns:** Dict[str, Any]
