@@ -49,9 +49,11 @@ class _Base:
             expire_at: datetime = None,
             expire_after: Union[int, float] = None,
     ) -> Dict[str, Any]:
-        assert key == "", "key cannot be empty string"
         data = {field.name: field.value for field in fields}
-        data['key'] = str(key)
+        if not isinstance(key, str):
+            raise TypeError("key must be of type str")
+        if key:
+            data['key'] = str(key)
         if expire_at:
             payload['items'][0][self._expiry_key] = self.__time_to_expiry(expire_at)
         elif expire_after:
