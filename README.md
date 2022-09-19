@@ -31,8 +31,6 @@ from deta import Deta, Field
 
 async def main():
     deta = Deta()
-    # mandatory to assign a session
-    await deta.connect()
     # instantiating a drive
     drive = deta.drive(name='test_123')
     # instantiating a base
