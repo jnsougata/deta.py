@@ -94,7 +94,7 @@ class _Route:
         if resp.status == 400:
             raise BadRequest('invalid update payload')
 
-    async def fetch(self, name: str, limit: Optional[int], last: Optional[str], queries: list[dict]):
+    async def fetch(self, name: str, limit: Optional[int], last: Optional[str], queries: List[dict]):
         ep = self.base_url + name + '/query'
         if limit and limit > 1000:
             raise ValueError('limit must be less or equal to 1000')
