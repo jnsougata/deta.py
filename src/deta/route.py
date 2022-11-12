@@ -3,8 +3,9 @@ import sys
 import asyncio
 import aiohttp
 from .errors import *
-from typing import Any, Optional, Union, Tuple
 from urllib.parse import quote_plus
+from typing import Optional, Union, List, Dict, Any
+
 
 
 PathLike = Union[str, bytes]
@@ -70,7 +71,7 @@ class _Route:
         await self.session.delete(ep, headers=self.base_headers)
         return key
 
-    async def delete_many(self, name: str, keys: list):
+    async def delete_many(self, name: str, keys: List[str]):
         task = [asyncio.create_task(self.delete(name, key)) for key in keys]
         return await asyncio.gather(*task)
 
@@ -94,7 +95,7 @@ class _Route:
         if resp.status == 400:
             raise BadRequest('invalid update payload')
 
-    async def fetch(self, name: str, limit: Optional[int], last: Optional[str], queries: list[dict]):
+    async def fetch(self, name: str, limit: Optional[int], last: Optional[str], queries: List[Dict[str, Any]]):
         ep = self.base_url + name + '/query'
         if limit and limit > 1000:
             raise ValueError('limit must be less or equal to 1000')
@@ -157,7 +158,7 @@ class _Route:
             error_map = await resp.json()
             raise BadRequest('\n'.join(error_map['errors']))
 
-    async def delete_files(self, drive: str, keys: list):
+    async def delete_files(self, drive: str, keys: List[str]):
         ep = self.drive_url + drive + '/files'
         json_data = {'names': keys}
         resp = await self.session.delete(ep, headers=self.base_headers, json=json_data)
