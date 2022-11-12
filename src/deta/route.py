@@ -114,12 +114,12 @@ class _Route:
                 last = data['paging'].get('last')
         elif not last and limit:
             payload['limit'] = limit
-            resp = await self.session.post(ep, headers=self.base_headers, json=query)
+            resp = await self.session.post(ep, headers=self.base_headers, json=payload)
             items.extend((await resp.json())['items'])
         elif last and limit:
             payload['last'] = last
             payload['limit'] = limit
-            resp = await (await self.session.post(ep, headers=self.base_headers, json=query)).json()
+            resp = await (await self.session.post(ep, headers=self.base_headers, json=payload)).json()
             items.extend(resp['items'])
         else:
             ini_data = await (await self.session.post(ep, headers=self.base_headers, json=payload)).json()
