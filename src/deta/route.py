@@ -3,7 +3,7 @@ import sys
 import asyncio
 import aiohttp
 from .errors import *
-from typing import Any, Optional, Union, Tuple
+from typing import Any, Optional, Union, Tuple, List
 from urllib.parse import quote_plus
 
 
