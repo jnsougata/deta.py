@@ -25,7 +25,7 @@ class _Route:
         self.base_url = f'{self.BASE}/{self.pid}/'
         self.drive_url = f'{self.DRIVE}/{self.pid}/'
         self.base_headers = {'X-API-Key': project_key, 'Content-Type': self.MIME_TYPE}
-        self.drive_headers = {'X-API-Key': project_key, 'Content-Type': self.CONTENT_TYPE}
+        self.drive_headers = {'X-Api-Key': project_key, 'Content-Type': self.CONTENT_TYPE}
 
     @staticmethod
     def fmt_error(emap: dict) -> str:
@@ -178,40 +178,44 @@ class _Route:
             ep = f'{self.drive_url}{drive}/files?name={quote_plus(name)}'
             resp = await self.session.post(ep, headers=self.drive_headers, data=chunks)
             file.close()
-            final, status = await resp.json(), resp.status
-        else:
-            ep = f'{self.drive_url}{drive}/files?name={quote_plus(name)}'
-            ini = await self.session.post(ep, headers=self.drive_headers)
-            if ini.status == 202:
-                upload_id = (await ini.json())['upload_id']
-                chunked = [
-                    chunks[i:i+self.MAX_UPLOAD_SIZE]
-                    for i in range(0, len(chunks), self.MAX_UPLOAD_SIZE)
-                ]
-                upload_tasks = []
-                for i, chunk in enumerate(chunked[:-1]):
-                    post_ep = (
-                        f"{self.drive_url}{drive}/uploads/{upload_id}/parts?name={name}&part={i + 1}"
-                    )
-                    upload_tasks.append(
-                        asyncio.create_task(self.session.post(post_ep, headers=self.drive_headers, data=chunk))
-                    )
-                gathered = await asyncio.gather(*upload_tasks)
-                ok = True
-                for item in gathered:
-                    if isinstance(item, Exception):
-                        success = False
-                        abort_ep = f"{self.drive_url}{drive}/uploads/{upload_id}?name={name}"
-                        await self.session.delete(abort_ep, headers=self.drive_headers)
-                        file.close()
-                        raise Exception("failed to upload a chunked part")
-                if ok:
-                    last_chunk_ep = f"{self.drive_url}{drive}/uploads/{upload_id}?name={name}"
-                    resp = await self.session.patch(last_chunk_ep, headers=self.drive_headers, data=chunked[-1])
-                    file.close()
-                    final, status = await resp.json(), resp.status
+            return await resp.json()
+        
+        r = await self.session.post(
+            f'{self.drive_url}{drive}/files?name={quote_plus(name)}', 
+            headers=self.drive_headers
+        )
+        if r.status == 202:
+            upload_id = (await r.json())['upload_id']
+            chunked = [
+                chunks[i:i+self.MAX_UPLOAD_SIZE]
+                for i in range(0, len(chunks), self.MAX_UPLOAD_SIZE)
+            ]
+            upload_tasks = [
+                self.session.post(
+                    f"{self.drive_url}{drive}/uploads/{upload_id}/parts?name={name}&part={i + 1}", 
+                    headers=self.drive_headers, 
+                    data=chunk
+                )
+                for i, chunk in enumerate(chunked)
+            ]
+            gathered = await asyncio.gather(*upload_tasks)
+            status_codes = [i.status == 200 for i in gathered]
+            if all(status_codes):
+                resp = await self.session.patch(
+                    f"{self.drive_url}{drive}/uploads/{upload_id}?name={name}",
+                    headers=self.drive_headers
+                )
+                file.close()
+                final, status = await resp.json(), resp.status
+            else:
+                await self.session.delete(
+                    f"{self.drive_url}{drive}/uploads/{upload_id}?name={name}", 
+                    headers=self.drive_headers
+                )
+                file.close()
+                raise Exception("failed to upload a chunked part")
 
-        if status == 200 or status == 201:
+        if status == 200:
             return final
         elif status == 400:
             raise BadRequest(self.fmt_error(final))

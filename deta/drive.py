@@ -11,9 +11,10 @@ class _Drive:
         self._route = _Route(project_key, session)
 
     async def close(self):
-        await self._route.close()
+        await self.session.close()
 
-    async def files(self, limit: Optional[int] = None, prefix: Optional[str] = None) -> List[str]:
+    async def files(self, limit: Optional[int] = None, prefix: Optional[str] = None) -> Optional[List[str]]:
+        
         def get_last(response: dict):
             if response.get('paging') and response.get('paging').get('last'):
                 return response['paging']['last']

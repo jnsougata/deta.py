@@ -55,9 +55,9 @@ class _Base:
         if key:
             data['key'] = str(key)
         if expire_at:
-            payload['items'][0][self._expiry_key] = self.__time_to_expiry(expire_at)
+            data[self._expiry_key] = self.__time_to_expiry(expire_at)
         elif expire_after:
-            payload['items'][0][self._expiry_key] = self.__time_to_expiry(expire_after)
+            data[self._expiry_key] = self.__time_to_expiry(expire_after)
         return await self._route.put(self.name, {"items": [data]})
 
     async def put_multiple(
@@ -92,7 +92,7 @@ class _Base:
                 form.append(data)
         return await self._route.put(self.name, {"items": form})
 
-    async def delete(self, *keys: str) -> Union[Dict[str, Any] | List[Dict[str, Any]]]:
+    async def delete(self, *keys: str) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
         if len(keys) == 1:
             return await self._route.delete(self.name, keys[0])
         else:
