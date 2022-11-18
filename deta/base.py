@@ -1,8 +1,8 @@
 import asyncio
 from .errors import *
-from aiohttp import ClientSession
 from typing import Union
 from .route import _Route
+from aiohttp import ClientSession
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from .utils import Field, _Update, _Query, Set, Delete
@@ -43,11 +43,11 @@ class _Base:
         return await self._route.fetch_all(self.name)
 
     async def put(
-            self,
-            key: str,
-            *fields: Field,
-            expire_at: datetime = None,
-            expire_after: Union[int, float] = None,
+        self,
+        key: str,
+        *fields: Field,
+        expire_at: datetime = None,
+        expire_after: Union[int, float] = None,
     ) -> Dict[str, Any]:
         data = {field.name: field.value for field in fields}
         if not isinstance(key, str):

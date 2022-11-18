@@ -9,14 +9,15 @@ from typing import Optional
 class Deta:
 
     def __init__(
-            self,
-            project_key: Optional[str] = None,
-            *,
-            session: Optional[aiohttp.ClientSession] = None,
-            loop: Optional[asyncio.AbstractEventLoop] = None
+        self,
+        project_key: Optional[str] = None,
+        *,
+        session: Optional[aiohttp.ClientSession] = None,
+        loop: Optional[asyncio.AbstractEventLoop] = None
     ):
         self.token = project_key or os.getenv('DETA_PROJECT_KEY')
         assert self.token, 'project key is required'
+        assert len(self.token.split('_'))== 2, 'invalid project key'
         if not session:
             self.session = aiohttp.ClientSession(loop=loop)
         else:
@@ -25,7 +26,7 @@ class Deta:
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc, tb):
+    async def __aexit__(self, _ , exc, __):
         await self.session.close()
         if exc:
             raise exc
