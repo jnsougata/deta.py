@@ -1,149 +1,111 @@
 from __future__ import annotations
-from typing import List, Dict, Any, Union, Optional
+from datetime import datetime, timedelta
+from typing import List, Dict, Any, Union, Optional, Any
 
 
-class Field:
-    def __init__(self, name: str, value: Any = None):
-        self.name = name
-        self.value = value
+def unix_converter(time_value: Union[int, float, datetime]) -> float:
+    if isinstance(time_value, datetime):
+        return time_value.replace(microsecond=0).timestamp()
+    else:
+        return (datetime.now() + timedelta(seconds=time_value)).replace(microsecond=0).timestamp()
 
-    def dict(self) -> Dict[str, Any]:
-        return {self.name: self.value}
+class Record:
+    def __init__(
+        self,  
+        data: Dict[str, Any] = None,
+        *, 
+        key: str = None,
+        expire_at: datetime = None,
+        expire_after: Union[int, float] = None,
+    ):
+        self.key = key
+        self.data = data or {}
+        self.expire_at = expire_at
+        self.expire_after = expire_after
+    
+    def __repr__(self) -> str:
+        return f"Record({self.key}, {self.name}, {self.value})"
+    
+    def to_json(self) -> Dict[str, Any]:
+        if self.key:
+            self.data["key"] = self.key
+        if self.expire_at:
+            self.data["__expires"] = unix_converter(self.expire_at)
+        elif self.expire_after:
+            self.data["__expires"] = unix_converter(self.expire_after)
+        return self.data
 
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> List[Field]:
-        return [cls(name=k, value=v) for k, v in data.items()]
+class Updater:
 
+    def __init__(self) -> None:
+        self._set = {}
+        self._increment = {}
+        self. _append = {}
+        self._prepend = {}
+        self._delete = []
+    
+    def set_field(self, field: str, value: Any):
+        self._set[field] = value
+    
+    def increment_field(self, field: str, value: Union[int, float] = 1):
+        self._increment[field] = value
+    
+    def append_field(self, field: str, value: List[Any]):
+        self._append[field] = value
+    
+    def prepend_field(self, field: str, value: List[Any]):
+        self._prepend[field] = value
+    
+    def delete_field(self, field: str):
+        self._delete.append(field)
+    
+    def to_json(self) -> Dict[str, Any]:
+        payload = {}
+        if self._set:
+            payload["set"] = self._set
+        if self._increment:
+            payload["increment"] = self._increment
+        if self._append:
+            payload["append"] = self._append
+        if self._prepend:
+            payload["prepend"] = self._prepend
+        if self._delete:
+            payload["delete"] = self._delete
+        return payload
 
-class _Update:
+class Query:
+    def __init__(self):
+        self._payload = {}
+    
+    def equal(self, field: str, value: Any):
+        self._payload[field] = value
+    
+    def not_equal(self, field: str, value: Any):
+        self._payload[f"{field}?ne"] = value
+    
+    def greater_than(self, field: str, value: Any):
+        self._payload[f"{field}?gt"] = value
+    
+    def greater_equal(self, field: str, value: Any):
+        self._payload[f"{field}?gte"] = value
+    
+    def less_than(self, field: str, value: Any):
+        self._payload[f"{field}?lt"] = value
+    
+    def less_equal(self, field: str, value: Any):
+        self._payload[f"{field}?lte"] = value
+    
+    def contains(self, field: str, value: Any):
+        self._payload[f"{field}?contains"] = value
+    
+    def not_contains(self, field: str, value: Any):
+        self._payload[f"{field}?not_contains"] = value
+    
+    def range(self, field: str, start: Union[int, float], end: Union[int, float]):
+        self._payload[f"{field}?r"] = [start, end]
+    
+    def prefix(self, field: str, value: str):
+        self._payload[f"{field}?pfx"] = value
 
-    def __init__(self, payload: Dict[str, Any]):
-        self.value = payload
-
-
-class Set(_Update):
-    def __init__(self, *fields: Field):
-        super().__init__({'set': {field.name: field.value for field in fields}})
-
-
-class Increment(_Update):
-    def __init__(self, *fields: Field):
-        form = {}
-        for field in fields:
-            if isinstance(field.value, int) or isinstance(field.value, float):
-                form.update(field.dict())
-            else:
-                raise TypeError('increment value must be int or float')
-        super().__init__({'increment': form})
-
-
-class Append(_Update):
-    def __init__(self, *fields: Field):
-        form = {}
-        for field in fields:
-            if isinstance(field.value, list):
-                form.update(field.dict())
-            else:
-                raise TypeError('append value must be list')
-        super().__init__({'append': form})
-
-
-class Prepend(_Update):
-    def __init__(self, *fields: Field):
-        form = {}
-        for field in fields:
-            if isinstance(field.value, list):
-                form.update(field.dict())
-            else:
-                raise TypeError('prepend value must be list')
-        super().__init__({'prepend': form})
-
-
-class Delete(_Update):
-    def __init__(self, *fields: str):
-        super().__init__({'delete': list(fields)})
-
-
-class _Query:
-
-    def __init__(self, payload: Union[Dict[str, Any]]):
-        self.value = payload
-
-
-class KeyQuery(_Query):
-    def __init__(self, key: str):
-        super().__init__({'key': key})
-
-
-class PrefixQuery(_Query):
-    def __init__(self, prefix: str):
-        super().__init__({'key?pfx': prefix})
-
-
-class EqualsQuery(_Query):
-    def __init__(self, field: str, value: Any):
-        super().__init__({field: value})
-
-
-class NotEqualsQuery(_Query):
-    def __init__(self, field: str, value: Any):
-        super().__init__({f'{field}?ne': value})
-
-
-class GreaterThanQuery(_Query):
-    def __init__(self, field: str, value: Any):
-        super().__init__({f'{field}?gt': field})
-
-
-class GreaterEqualsQuery(_Query):
-    def __init__(self, field: str, value: Any):
-        super().__init__({f'{field}?gte': value})
-
-
-class LessThanQuery(_Query):
-    def __init__(self, field: str, value: Any):
-        super().__init__({f'{field}?lt': value})
-
-
-class LessEqualsQuery(_Query):
-    def __init__(self, field: str, value: Any):
-        super().__init__({f'{field}?lte': value})
-
-
-class InRangeQuery(_Query):
-    def __init__(self, field: str, value: List[Union[int, float]]):
-        super().__init__({f'{field.name}?r': value})
-
-
-class ContainsQuery(_Query):
-    def __init__(self, field: str, value: Union[List[Any], str]):
-        super().__init__({f'{field}?contains': value})
-
-
-class NotContainsQuery(_Query):
-    def __init__(self, field: str, value: Union[List[Any], str]):
-        super().__init__({f'{field}?not_contains': value})
-
-
-class StartsWithQuery(_Query):
-    def __init__(self, field: str, value: str):
-        super().__init__({f'{field}?pfx': value})
-
-
-class AND(_Query):
-    def __init__(self, *queries: _Query):
-        super().__init__({key: value for query in queries for key, value in query.value.items()})
-
-
-class OR:
-    def __init__(self, *batches: List[_Query]):
-        self.value = []
-        children = []
-        reference = [[i] for i in batches[0]]
-        for batch in batches[1:]:
-            for i in batch:
-                for r in reference:
-                    children.append(r + [i])
-            reference = children
-            children = []
-        self.value = list(set([AND(*r) for r in reference]))
+    def to_json(self) -> Dict[str, Any]:
+        return self._payload
