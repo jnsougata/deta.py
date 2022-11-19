@@ -10,8 +10,8 @@ with open('README.md') as f:
 
 setup(
     name='deta',
-    version='0.0.3',
-    description='async API wrapper for deta.sh',
+    version='0.0.4',
+    description='Async API wrapper for deta base and drive',
     long_description=readme,
     long_description_content_type="text/markdown",
     url='https://github.com/jnsougata/deta',

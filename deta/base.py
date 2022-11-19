@@ -98,7 +98,7 @@ class _Base:
         responses = await asyncio.gather(*tasks)
         return [await r.json() for r in responses]
 
-    async def query(self, *queries: Query, limit: Optional[int] = None, last: Optional[str] = None) -> List[Any]:
+    async def query(self, *queries: Query, limit: Optional[int] = None, last: Optional[str] = None) -> Dict[str, Any]:
         translated = [q.to_json() for q in queries]
         payload = {"query": translated}
         if limit:
@@ -110,3 +110,4 @@ class _Base:
             headers=self._auth_headers,
             json=payload,
         )
+        return await resp.json()

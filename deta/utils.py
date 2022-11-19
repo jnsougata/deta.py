@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Union, Optional, Any
+from typing import List, Dict, Any, Union, Any
 
 
 def unix_converter(time_value: Union[int, float, datetime]) -> float:
@@ -44,19 +44,19 @@ class Updater:
         self._prepend = {}
         self._delete = []
     
-    def set_field(self, field: str, value: Any):
+    def set(self, field: str, value: Any):
         self._set[field] = value
     
-    def increment_field(self, field: str, value: Union[int, float] = 1):
+    def increment(self, field: str, value: Union[int, float] = 1):
         self._increment[field] = value
     
-    def append_field(self, field: str, value: List[Any]):
+    def append(self, field: str, value: List[Any]):
         self._append[field] = value
     
-    def prepend_field(self, field: str, value: List[Any]):
+    def prepend(self, field: str, value: List[Any]):
         self._prepend[field] = value
     
-    def delete_field(self, field: str):
+    def delete(self, field: str):
         self._delete.append(field)
     
     def to_json(self) -> Dict[str, Any]:
