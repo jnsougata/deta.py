@@ -8,6 +8,7 @@ def unix_converter(time_value: Union[int, float, datetime]) -> float:
     else:
         return (datetime.now() + timedelta(seconds=time_value)).replace(microsecond=0).timestamp()
 
+
 class Record:
     def __init__(
         self,  
@@ -108,4 +109,3 @@ class Query:
 
     def to_json(self) -> Dict[str, Any]:
         return self._payload
-        
