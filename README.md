@@ -36,28 +36,33 @@ from deta import Deta, Record
 async def main():
     deta = Deta()
 
-    # instantiating a drive
-    drive = deta.drive(name='TEST_DRIVE')
-
     # instantiating a base
     base = deta.base(name='TEST_BASE')
 
-    # storing a json obj to deta base
+    # instantiating a drive
+    drive = deta.drive(name='TEST_DRIVE')
+
+    # put single json deta base
     await base.put(
-      Record(
-        {
-          'name': 'John Doe', 
-          'age': 20
-        }, 
-        key='xyz', 
-        expire_after=100
-      )
+      Record({'name': 'John Doe', 'age': 20}, key='xyz', expire_after=100)
+    )
+
+    # or put multiple records with a single request
+    await base.put(
+      Record({'name': 'John Doe 0', 'age': 20}, key='xyz_1', expire_after=100)
+      Record({'name': 'John Doe 1', 'age': 21}, key='xyz_2', expire_after=100)
+      Record({'name': 'John Doe 2', 'age': 22}, key='xyz_3', expire_after=100)
     )
 
     # downloading a song stored in deta drive
-    resp = await drive.get('song.mp3')
-    with open('song.mp3', 'wb') as f:
-        f.write(resp.read())
+    reader = await drive.get('song.mp3')
+    async for chunk, _ in reader.iter_chunks():
+        # do something with the chunk
+        ...
+    
+    # or read the entire file
+    content = await reader.read()
+    # do something with the content
 
     # closing deta connection
     await deta.close()
@@ -71,35 +76,42 @@ if __name__ == '__main__':
 ```python
 async def main():
     async with Deta() as d:
+
         base = d.base('TEST_BASE')
         print(await base.get())
+
+        drive = d.drive('TEST_DRIVE')
+        reader = await drive.get('song.mp3')
+        content = await reader.read()
+        with open('song.mp3', 'wb') as f:
+            f.write(content)
 ```
 
 # Usage
 
 # Base
-- `put(*records: Record)` 
+- `async put(*records: Record)` 
   - **Returns:** Dict[str, Any]
-- `delete(self, *keys: str)` 
+- `async delete(self, *keys: str)` 
   - **Returns:** Optional[List[Dict[str, str]]]
-- `get(*keys: str)`
+- `async get(*keys: str)`
   - **Returns:** List[Dict[str, Any]]
-- `insert(*records: Record)`
+- `async insert(*records: Record)`
   - **Returns:** Optional[List[Dict[str, Any]]]
-- `update(key: str, updater: Updater)`
+- `async update(key: str, updater: Updater)`
   - **Returns:** Dict[str, Any]
-- `query(*queries: Query, limit: Optional[int], last: Optional[str])`
+- `async query(*queries: Query, limit: Optional[int], last: Optional[str])`
   - **Returns:** Dict[str, Any]
 
 # Drive
-- `files(limit: int = None, prefix: str = None)`
-  - **Returns:** List[Dict[str, Any]]
-- `delete(*names: str)`
+- `async put(content: os.PathLike, *, save_as: Optional[str], folder: Optional[str])`
   - **Returns:** Dict[str, Any]
-- `upload(content: [str | bytes], name: str)` 
+- `async get(filename: str, *, folder: Optional[str])`
+  - **Returns:** StreamReader (Async)
+- `async files(limit: int = None, prefix: str = None, last: str = None)`
   - **Returns:** Dict[str, Any]
-- `get(name: str)`
-  - **Returns:** io.BytesIO"
+- `async delete(*names: str)`
+  - **Returns:** Dict[str, Any]
 
 # Records
 - Base class **Record** 

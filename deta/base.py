@@ -6,7 +6,7 @@ from .utils import Record, Updater, Query
 from typing import List, Dict, Any, Optional
 
 
-class _Base:
+class Base:
     def __init__(self, name: str, project_key: str, session: ClientSession):
         self.name = name
         self.session = session

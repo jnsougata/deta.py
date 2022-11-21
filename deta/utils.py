@@ -1,4 +1,3 @@
-from __future__ import annotations
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Union, Any
 
@@ -109,3 +108,4 @@ class Query:
 
     def to_json(self) -> Dict[str, Any]:
         return self._payload
+        

@@ -1,8 +1,8 @@
 import os
 import asyncio
 import aiohttp
-from .base import _Base
-from .drive import _Drive
+from .base import Base
+from .drive import Drive
 from typing import Optional
 
 
@@ -34,8 +34,8 @@ class Deta:
     async def close(self):
         await self.session.close()
 
-    def base(self, name: str) -> _Base:
-        return _Base(name, self.token, self.session)
+    def base(self, name: str) -> Base:
+        return Base(name, self.token, self.session)
 
-    def drive(self, name: str) -> _Drive:
-        return _Drive(name, self.token, self.session)
+    def drive(self, name: str) -> Drive:
+        return Drive(name, self.token, self.session)
