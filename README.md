@@ -54,6 +54,23 @@ async def main():
       Record({'name': 'John Doe 2', 'age': 22}, key='xyz_3', expire_after=100)
     )
 
+    # doing queries
+    q = deta.Query()
+    q.equal("name", "John")
+    q.equal("address.city", "New York")
+    q.range("age", 18, 30)
+    q.not_equal("position", "Manager")
+    q.contains("id", "-")
+    results = await db.query(q)
+    print(results)
+
+    # updating records
+    u = deta.Updater()
+    u.set("inactive", True)
+    u.increment("age")
+    u.delete("address")
+    await db.update("user_777", u)
+
     # downloading a song stored in deta drive
     reader = await drive.get('song.mp3')
     async for chunk, _ in reader.iter_chunks():
