@@ -22,8 +22,26 @@ class Base:
     
     async def put(self, *records: Record) -> Dict[str, Any]:
         if len(records) > 25:
-            warnings.warn("Cannot put more than 25 records at once. First 25 records will be put")
-            records = records[:25]
+            chunked = [records[i:i + 25] for i in range(0, len(records), 25)]
+            payloads = [{"items": [r.to_json() for r in chunk]} for chunk in chunked]
+            tasks = [
+                self.session.put(
+                    f'{self.root}/items', 
+                    json=payload, 
+                    headers=self._auth_headers
+                ) 
+                for payload in payloads
+            ]
+            responses = await asyncio.gather(*tasks)
+            batch = {"processed": {"items": []},"failed": {"items": []}}
+            rsponses  = [await r.json() for r in responses]
+            for r in rsponses:
+                if r.get('processed'):
+                    batch['processed']['items'].extend(r['processed']['items'])
+                if r.get('failed'):
+                    batch['failed']['items'].extend(r['failed']['items'])
+            return batch
+
         payload = {"items": [record.to_json() for record in records]}
         resp = await self.session.put(
             f'{self.root}/items', 
