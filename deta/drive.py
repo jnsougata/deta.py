@@ -60,8 +60,7 @@ class Drive:
                 upload_id = resp_data['upload_id']
                 name = resp_data['name']
                 chunked = [
-                    content[i:i+MAX_UPLOAD_SIZE]
-                    for i in range(0, len(content), MAX_UPLOAD_SIZE)
+                    content[i:i+MAX_UPLOAD_SIZE] for i in range(0, len(content), MAX_UPLOAD_SIZE)
                 ]
                 upload_tasks = [
                     self.session.post(
@@ -73,17 +72,13 @@ class Drive:
                 ]
                 gathered = await asyncio.gather(*upload_tasks)
                 status_codes = [r.status == 200 for r in gathered]
+                headers = self._auth_headers.copy()
+                headers['Content-Type'] = 'application/json'
                 if all(status_codes):
-                    resp = await self.session.patch(
-                        f"{self.root}/uploads/{upload_id}?name={name}",
-                        headers=self._auth_headers
-                    )
+                    resp = await self.session.patch(f"{self.root}/uploads/{upload_id}?name={name}",headers=headers)
                     return await resp.json()
                 else:
-                    await self.session.delete(
-                        f"{self.root}/uploads/{upload_id}?name={name}", 
-                        headers=self._auth_headers
-                    )
+                    await self.session.delete(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
                     raise Exception("failed to upload a chunked part")
 
     async def files(
