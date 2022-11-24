@@ -39,21 +39,18 @@ class Drive:
         else:
             raise ValueError('path must be a string or bytes')
         
-        chunks = file.read()
-
         if folder:
             save_as = f'{folder}/{save_as}'
-        
-        if not len(chunks) > MAX_UPLOAD_SIZE:
-            with file:
+        with file:
+            content = file.read()
+            if not len(content) > MAX_UPLOAD_SIZE:
                 resp = await self.session.post(
                     f'{self.root}/files?name={quote_plus(save_as)}', 
                     headers=self._auth_headers, 
-                    data=chunks
+                    data=content
                 )
                 return await resp.json()
 
-        with file:
             r = await self.session.post(
                 f'{self.root}/uploads?name={quote_plus(save_as)}', 
                 headers=self._auth_headers
@@ -63,8 +60,8 @@ class Drive:
                 upload_id = resp_data['upload_id']
                 name = resp_data['name']
                 chunked = [
-                    chunks[i:i+MAX_UPLOAD_SIZE]
-                    for i in range(0, len(chunks), MAX_UPLOAD_SIZE)
+                    content[i:i+MAX_UPLOAD_SIZE]
+                    for i in range(0, len(content), MAX_UPLOAD_SIZE)
                 ]
                 upload_tasks = [
                     self.session.post(
