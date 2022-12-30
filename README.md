@@ -6,8 +6,6 @@ An async library to interact with deta.sh base & drive
 - [GitHub](https://github.com/jnsougata)
 
 # Table of Contents
-- [deta](#deta)
-- [Table of Contents](#table-of-contents)
 - [Installing](#installing)
 - [Quick Start](#quick-start)
 - [Async Context Manager](#async-context-manager)
