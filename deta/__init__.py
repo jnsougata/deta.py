@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 
-__version__ = "0.0.3"
+__version__ = "0.0.5"
 
 from .utils import *
 from .deta import Deta
