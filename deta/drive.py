@@ -74,7 +74,7 @@ class Drive:
                 headers = self._auth_headers.copy()
                 headers['Content-Type'] = 'application/json'
                 if all(status_codes):
-                    resp = await self.session.patch(f"{self.root}/uploads/{upload_id}?name={name}",headers=headers)
+                    resp = await self.session.patch(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
                     return await resp.json()
                 else:
                     await self.session.delete(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
@@ -115,7 +115,7 @@ class Drive:
     async def delete(self, *names: str) -> Dict[str, Any]:
         headers = self._auth_headers.copy()
         headers['Content-Type'] = 'application/json'
-        r = await self.session.delete(f'{self.root}/files', headers=headers,json={'names': list(names)})
+        r = await self.session.delete(f'{self.root}/files', headers=headers, json={'names': list(names)})
         return await r.json()
 
     async def get(self, filename: str, *, folder: str = None) -> StreamReader:
