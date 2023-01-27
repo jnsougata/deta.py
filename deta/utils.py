@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Union, Any
+from typing import List, Dict, Union, Any
 
 
 def unix_converter(time_value: Union[int, float, datetime]) -> float:
@@ -23,10 +23,7 @@ class Record:
         self.expire_at = expire_at
         self.expire_after = expire_after
     
-    def __repr__(self) -> str:
-        return f"Record({self.key}, {self.name}, {self.value})"
-    
-    def to_json(self) -> Dict[str, Any]:
+    def json(self) -> Dict[str, Any]:
         if self.key:
             self.data["key"] = self.key
         if self.expire_at:
@@ -34,6 +31,7 @@ class Record:
         elif self.expire_after:
             self.data["__expires"] = unix_converter(self.expire_after)
         return self.data
+
 
 class Updater:
 
@@ -59,7 +57,7 @@ class Updater:
     def delete(self, field: str):
         self._delete.append(field)
     
-    def to_json(self) -> Dict[str, Any]:
+    def json(self) -> Dict[str, Any]:
         payload = {}
         if self._set:
             payload["set"] = self._set
@@ -72,6 +70,7 @@ class Updater:
         if self._delete:
             payload["delete"] = self._delete
         return payload
+
 
 class Query:
     def __init__(self):
@@ -107,5 +106,5 @@ class Query:
     def prefix(self, field: str, value: str):
         self._payload[f"{field}?pfx"] = value
 
-    def to_json(self) -> Dict[str, Any]:
+    def json(self) -> Dict[str, Any]:
         return self._payload

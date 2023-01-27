@@ -46,8 +46,7 @@ class Drive:
             if not len(content) > MAX_UPLOAD_SIZE:
                 resp = await self.session.post(
                     f'{self.root}/files?name={quote_plus(save_as)}', 
-                    headers=self._auth_headers, 
-                    data=content
+                    headers=self._auth_headers, data=content
                 )
                 return await resp.json()
 
@@ -119,7 +118,7 @@ class Drive:
         r = await self.session.delete(f'{self.root}/files', headers=headers,json={'names': list(names)})
         return await r.json()
 
-    async def get(self, filename: str, *, folder: str) -> StreamReader:
+    async def get(self, filename: str, *, folder: str = None) -> StreamReader:
         if folder:
             filename = f'{folder}/{filename}'
         resp = await self.session.get(

@@ -1,6 +1,5 @@
 import asyncio
 import warnings
-from .errors import *
 from aiohttp import ClientSession
 from .utils import Record, Updater, Query
 from typing import List, Dict, Any, Optional
@@ -23,7 +22,7 @@ class Base:
     async def put(self, *records: Record) -> Dict[str, Any]:
         if len(records) > 25:
             chunked = [records[i:i + 25] for i in range(0, len(records), 25)]
-            payloads = [{"items": [r.to_json() for r in chunk]} for chunk in chunked]
+            payloads = [{"items": [r.json() for r in chunk]} for chunk in chunked]
             tasks = [
                 self.session.put(
                     f'{self.root}/items', 
@@ -33,16 +32,16 @@ class Base:
                 for payload in payloads
             ]
             responses = await asyncio.gather(*tasks)
-            batch = {"processed": {"items": []},"failed": {"items": []}}
-            rsponses  = [await r.json() for r in responses]
-            for r in rsponses:
+            batch = {"processed": {"items": []}, "failed": {"items": []}}
+            responses = [await r.json() for r in responses]
+            for r in responses:
                 if r.get('processed'):
                     batch['processed']['items'].extend(r['processed']['items'])
                 if r.get('failed'):
                     batch['failed']['items'].extend(r['failed']['items'])
             return batch
 
-        payload = {"items": [record.to_json() for record in records]}
+        payload = {"items": [record.json() for record in records]}
         resp = await self.session.put(
             f'{self.root}/items', 
             json=payload, 
@@ -66,24 +65,16 @@ class Base:
     async def get(self, *keys: str) -> List[Dict[str, Any]]:
         if not keys:
             warnings.warn("No keys provided. Returning all records. Might be slow for larger bases")
-            last = None
             container = []
-            r = await self.session.post(
-                f'{self.root}/query', 
-                headers=self._auth_headers
-            )
+            r = await self.session.post(f'{self.root}/query', headers=self._auth_headers)
             data = await r.json()
-            container.extend(data['items'])
+            container.extend(data.get('items', []))
             try:
                 last = data['paging']['last']
             except KeyError:
                 return container
             while last:
-                r = await self.session.post(
-                    f'{self.root}/query', 
-                    headers=self._auth_headers,
-                    json={'last': last}
-                )
+                r = await self.session.post(f'{self.root}/query', headers=self._auth_headers, json={'last': last})
                 data = await r.json()
                 if data.get('items'):
                     container.extend(data['items'])
@@ -93,7 +84,8 @@ class Base:
                     return container
 
         if len(keys) == 1:
-            return [await (await self.session.get(f'{self.root}/items/{str(keys[0])}',headers=self._auth_headers)).json()]
+            return [
+                await (await self.session.get(f'{self.root}/items/{str(keys[0])}', headers=self._auth_headers)).json()]
 
         tasks = [self.session.get(f'{self.root}/items/{str(k)}', headers=self._auth_headers) for k in keys]
         responses = await asyncio.gather(*tasks)
@@ -103,7 +95,7 @@ class Base:
         resp = await self.session.patch(
             f'{self.root}/items/{key}',
             headers=self._auth_headers,
-            json=updater.to_json()
+            json=updater.json()
         )
         return await resp.json()
 
@@ -111,21 +103,17 @@ class Base:
         if not records:
             return None
         tasks = [self.session.post(
-            f'{self.root}/items',headers=self._auth_headers, json=p
-        ) for p in [{"item": r.to_json()} for r in records]]
+            f'{self.root}/items', headers=self._auth_headers, json=p
+        ) for p in [{"item": r.json()} for r in records]]
         responses = await asyncio.gather(*tasks)
         return [await r.json() for r in responses]
 
     async def query(self, *queries: Query, limit: Optional[int] = None, last: Optional[str] = None) -> Dict[str, Any]:
-        translated = [q.to_json() for q in queries]
+        translated = [q.json() for q in queries]
         payload = {"query": translated}
         if limit:
             payload['limit'] = limit
         if last:
             payload['last'] = last
-        resp = await self.session.post(
-            f'{self.root}/query',
-            headers=self._auth_headers,
-            json=payload,
-        )
+        resp = await self.session.post(f'{self.root}/query', headers=self._auth_headers, json=payload)
         return await resp.json()

@@ -26,7 +26,7 @@ class Deta:
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, _ , exc, __):
+    async def __aexit__(self, _, exc, __):
         await self.session.close()
         if exc:
             raise exc

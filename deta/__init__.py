@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 
-__version__ = "0.0.5"
+__version__ = "0.0.6"
 
-from .utils import *
 from .deta import Deta
+from .utils import Record, Updater, Query
