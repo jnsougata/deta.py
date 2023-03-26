@@ -1,10 +1,11 @@
 import io
 import os
+import re
 import secrets
 import asyncio
 from urllib.parse import quote_plus
 from aiohttp import ClientSession, StreamReader
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Tuple
 
 MAX_UPLOAD_SIZE = 10485760  # 10MB
 
@@ -117,10 +118,27 @@ class Drive:
         headers['Content-Type'] = 'application/json'
         r = await self.session.delete(f'{self.root}/files', headers=headers, json={'names': list(names)})
         return await r.json()
+    
+    async def size_of(self, filename: str) -> int:
+        headers = self._auth_headers.copy()
+        headers['Range'] = 'bytes=0-0'
+        resp = await self.session.get(f'{self.root}/files?name={filename}', headers=headers)
+        range = resp.headers.get('Content-Range')
+        pattern = re.compile(r'bytes 0-0/(\d+)')
+        match = pattern.match(range)
+        if match:
+            return int(match.group(1))
+        return 0
 
-    async def get(self, filename: str, *, folder: str = None) -> StreamReader:
-        if folder:
-            filename = f'{folder}/{filename}'
+    async def get(
+            self, 
+            filename: str, 
+            *,
+            range: Optional[Tuple[int, int]] = None,
+        ) -> StreamReader:
+        headers = self._auth_headers.copy()
+        if range:
+            headers['Range'] = f'bytes={range[0]}-{range[1]}' if range[1] else f'bytes={range[0]}-'
         resp = await self.session.get(
             f'{self.root}/files/download?name={filename}',
             headers=self._auth_headers

@@ -1,5 +1,4 @@
 import asyncio
-import warnings
 from aiohttp import ClientSession
 from .utils import Record, Updater, Query
 from typing import List, Dict, Any, Optional
@@ -21,26 +20,7 @@ class Base:
     
     async def put(self, *records: Record) -> Dict[str, Any]:
         if len(records) > 25:
-            chunked = [records[i:i + 25] for i in range(0, len(records), 25)]
-            payloads = [{"items": [r.json() for r in chunk]} for chunk in chunked]
-            tasks = [
-                self.session.put(
-                    f'{self.root}/items', 
-                    json=payload, 
-                    headers=self._auth_headers
-                ) 
-                for payload in payloads
-            ]
-            responses = await asyncio.gather(*tasks)
-            batch = {"processed": {"items": []}, "failed": {"items": []}}
-            responses = [await r.json() for r in responses]
-            for r in responses:
-                if r.get('processed'):
-                    batch['processed']['items'].extend(r['processed']['items'])
-                if r.get('failed'):
-                    batch['failed']['items'].extend(r['failed']['items'])
-            return batch
-
+            raise ValueError('cannot put more than 25 records at a time')
         payload = {"items": [record.json() for record in records]}
         resp = await self.session.put(
             f'{self.root}/items', 
@@ -49,22 +29,17 @@ class Base:
         )
         return await resp.json()
     
-    async def delete(self, *keys: str) -> Optional[List[Dict[str, str]]]:
+    async def delete(self, *keys: str) -> List[str]:
         if not keys:
-            return None
+            return []
         if len(keys) == 1:
-            r = await self.session.delete(
-                f'{self.root}/items/{str(keys[0])}',
-                headers=self._auth_headers
-            )
-            return [await r.json()]
+            await self.session.delete(f'{self.root}/items/{str(keys[0])}', headers=self._auth_headers)
         tasks = [self.session.delete(f'{self.root}/items/{str(k)}') for k in keys]
-        responses = await asyncio.gather(*tasks)
-        return [await r.json() for r in responses]
-    
+        await asyncio.gather(*tasks)
+        return list(keys)
+
     async def get(self, *keys: str) -> List[Dict[str, Any]]:
         if not keys:
-            warnings.warn("No keys provided. Returning all records. Might be slow for larger bases")
             container = []
             r = await self.session.post(f'{self.root}/query', headers=self._auth_headers)
             data = await r.json()

@@ -6,6 +6,8 @@ An async library to interact with deta.sh base & drive
 - [GitHub](https://github.com/jnsougata)
 
 # Table of Contents
+- [deta](#deta)
+- [Table of Contents](#table-of-contents)
 - [Installing](#installing)
 - [Quick Start](#quick-start)
 - [Async Context Manager](#async-context-manager)
@@ -121,12 +123,14 @@ async def main():
 # Drive
 - `async put(content: os.PathLike, *, save_as: Optional[str], folder: Optional[str])`
   - **Returns:** Dict[str, Any]
-- `async get(filename: str, *, folder: Optional[str])`
+- `async get(filename: str, *, range: Optional[Tuple[int, int]])`
   - **Returns:** StreamReader (Async)
-- `async files(limit: int = None, prefix: str = None, last: str = None)`
+- `async files(limit: Optional[int], prefix: Optional[str], last: Optional[str])`
   - **Returns:** Dict[str, Any]
 - `async delete(*names: str)`
   - **Returns:** Dict[str, Any]
+- `async size_of(filename: str)`
+  - **Returns:** int
 
 # Records
 - Base class **Record** 
