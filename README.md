@@ -49,8 +49,8 @@ async def main():
 
     # or put multiple records with a single request
     await base.put(
-      Record({'name': 'John Doe 0', 'age': 20}, key='xyz_1', expire_after=100)
-      Record({'name': 'John Doe 1', 'age': 21}, key='xyz_2', expire_after=100)
+      Record({'name': 'John Doe 0', 'age': 20}, key='xyz_1', expire_after=100),
+      Record({'name': 'John Doe 1', 'age': 21}, key='xyz_2', expire_after=100),
       Record({'name': 'John Doe 2', 'age': 22}, key='xyz_3', expire_after=100)
     )
 
