@@ -34,59 +34,59 @@ from deta import Deta, Record
 
 
 async def main():
-    deta = Deta()
+  deta = Deta()
 
-    # instantiating a base
-    base = deta.base(name='TEST_BASE')
+  # instantiating a base
+  base = deta.base(name='TEST_BASE')
 
-    # instantiating a drive
-    drive = deta.drive(name='TEST_DRIVE')
+  # instantiating a drive
+  drive = deta.drive(name='TEST_DRIVE')
 
-    # put single json deta base
-    await base.put(
-      Record({'name': 'John Doe', 'age': 20}, key='xyz', expire_after=100)
-    )
+  # put single json deta base
+  await base.put(
+    Record({'name': 'John Doe', 'age': 20}, key='xyz', expire_after=100)
+  )
 
-    # or put multiple records with a single request
-    await base.put(
-      Record({'name': 'John Doe 0', 'age': 20}, key='xyz_1', expire_after=100),
-      Record({'name': 'John Doe 1', 'age': 21}, key='xyz_2', expire_after=100),
-      Record({'name': 'John Doe 2', 'age': 22}, key='xyz_3', expire_after=100)
-    )
+  # or put multiple records with a single request
+  await base.put(
+    Record({'name': 'John Doe 0', 'age': 20}, key='xyz_1', expire_after=100),
+    Record({'name': 'John Doe 1', 'age': 21}, key='xyz_2', expire_after=100),
+    Record({'name': 'John Doe 2', 'age': 22}, key='xyz_3', expire_after=100)
+  )
 
-    # doing queries
-    q = deta.Query()
-    q.equal("name", "John")
-    q.equal("address.city", "New York")
-    q.range("age", 18, 30)
-    q.not_equal("position", "Manager")
-    q.contains("id", "-")
-    results = await db.query(q)
-    print(results)
+  # doing queries
+  q = deta.Query()
+  q.equal("name", "John")
+  q.equal("address.city", "New York")
+  q.range("age", 18, 30)
+  q.not_equal("position", "Manager")
+  q.contains("id", "-")
+  results = await db.fetch(q)
+  print(results)
 
-    # updating records
-    u = deta.Updater()
-    u.set("inactive", True)
-    u.increment("age")
-    u.delete("address")
-    await db.update("user_777", u)
+  # updating records
+  u = deta.Updater()
+  u.set("inactive", True)
+  u.increment("age")
+  u.delete("address")
+  await db.update("user_777", u)
 
-    # downloading a song stored in deta drive
-    reader = await drive.get('song.mp3')
-    async for chunk, _ in reader.iter_chunks():
-        # do something with the chunk
-        ...
-    
-    # or read the entire file
-    content = await reader.read()
-    # do something with the content
+  # downloading a song stored in deta drive
+  reader = await drive.get('song.mp3')
+  async for chunk, _ in reader.iter_chunks():
+    # do something with the chunk
+    ...
 
-    # closing deta connection
-    await deta.close()
+  # or read the entire file
+  content = await reader.read()
+  # do something with the content
 
-    
+  # closing deta connection
+  await deta.close()
+
+
 if __name__ == '__main__':
-    asyncio.run(main())
+  asyncio.run(main())
 ```
 
 # Async Context Manager

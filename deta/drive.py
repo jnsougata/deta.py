@@ -4,7 +4,8 @@ import re
 import secrets
 import asyncio
 from urllib.parse import quote_plus
-from aiohttp import ClientSession, StreamReader
+from aiohttp import ClientSession
+from .utils import Result
 from typing import Dict, Optional, Any, Tuple
 
 MAX_UPLOAD_SIZE = 10485760  # 10MB
@@ -28,7 +29,7 @@ class Drive:
         *,
         save_as: Optional[str] = None,
         folder: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> Result:
         if isinstance(content, str):
             file = open(content, 'rb')
             if not save_as:
@@ -49,7 +50,7 @@ class Drive:
                     f'{self.root}/files?name={quote_plus(save_as)}', 
                     headers=self._auth_headers, data=content
                 )
-                return await resp.json()
+                return Result(resp, 201)
 
             r = await self.session.post(
                 f'{self.root}/uploads?name={quote_plus(save_as)}', 
@@ -76,10 +77,10 @@ class Drive:
                 headers['Content-Type'] = 'application/json'
                 if all(status_codes):
                     resp = await self.session.patch(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
-                    return await resp.json()
+                    return Result(resp, 200)
                 else:
                     await self.session.delete(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
-                    raise Exception("failed to upload a chunked part")
+                    raise ConnectionError("failed to upload file completely")
 
     async def files(
         self, 
@@ -114,6 +115,8 @@ class Drive:
         return await resp.json()
 
     async def delete(self, *names: str) -> Dict[str, Any]:
+        if not names:
+            raise ValueError('at least one filename must be provided')
         headers = self._auth_headers.copy()
         headers['Content-Type'] = 'application/json'
         r = await self.session.delete(f'{self.root}/files', headers=headers, json={'names': list(names)})
@@ -123,9 +126,9 @@ class Drive:
         headers = self._auth_headers.copy()
         headers['Range'] = 'bytes=0-0'
         resp = await self.session.get(f'{self.root}/files?name={filename}', headers=headers)
-        range = resp.headers.get('Content-Range')
+        range_ = resp.headers.get('Content-Range')
         pattern = re.compile(r'bytes 0-0/(\d+)')
-        match = pattern.match(range)
+        match = pattern.match(range_)
         if match:
             return int(match.group(1))
         return 0
@@ -134,13 +137,17 @@ class Drive:
             self, 
             filename: str, 
             *,
-            range: Optional[Tuple[int, int]] = None,
-        ) -> StreamReader:
+            bytes_range: Optional[Tuple[int, int]] = None,
+    ) -> Result:
         headers = self._auth_headers.copy()
-        if range:
-            headers['Range'] = f'bytes={range[0]}-{range[1]}' if range[1] else f'bytes={range[0]}-'
+        if bytes_range:
+            headers['Range'] = (
+                f'bytes={bytes_range[0]}-{bytes_range[1]}' if bytes_range[1] else f'bytes={bytes_range[0]}-')
         resp = await self.session.get(
             f'{self.root}/files/download?name={filename}',
             headers=self._auth_headers
         )
-        return resp.content
+        if resp.status == 200:
+            return Result(resp)
+        else:
+            return Result(resp, 206)

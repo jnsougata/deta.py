@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Union, Any
 
+import aiohttp
+
 
 def unix_converter(time_value: Union[int, float, datetime]) -> float:
     if isinstance(time_value, datetime):
@@ -108,3 +110,25 @@ class Query:
 
     def json(self) -> Dict[str, Any]:
         return self._payload
+
+
+class Result:
+
+    def __init__(self, response: aiohttp.ClientResponse, success_status: int = 200):
+        self._response = response
+        self._success_status = success_status
+
+    @property
+    def status_code(self) -> int:
+        return self._response.status
+
+    @property
+    def ok(self) -> bool:
+        return self._response.status == self._success_status
+
+    @property
+    def content(self) -> aiohttp.StreamReader:
+        return self._response.content
+
+    async def json(self) -> Dict[str, Any]:
+        return await self._response.json()
