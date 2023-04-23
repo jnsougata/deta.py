@@ -70,11 +70,13 @@ class Base:
 
     async def fetch(
             self,
-            queries: List[Query],
+            queries: Optional[List[Query]] = None,
             *,
             limit: Optional[int] = None,
             last: Optional[str] = None
     ) -> Result:
+        if queries is None:
+            queries = []
         payload = {"query": [q.json() for q in queries]}
         if limit:
             payload['limit'] = limit
@@ -83,7 +85,7 @@ class Base:
         resp = await self.session.post(f'{self.root}/query', headers=self._auth_headers, json=payload)
         return Result(resp)
 
-    async def fetch_until_end(self, queries: List[Query]) -> List[Result]:
+    async def fetch_until_end(self, queries: Optional[List[Query]] = None) -> List[Result]:
         results = []
         result = await self.fetch(queries)
         results.append(result)

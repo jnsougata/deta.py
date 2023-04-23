@@ -3,9 +3,9 @@ import os
 import re
 import secrets
 import asyncio
+from .utils import Result
 from urllib.parse import quote_plus
 from aiohttp import ClientSession
-from .utils import Result
 from typing import Dict, Optional, Any, Tuple
 
 MAX_UPLOAD_SIZE = 10485760  # 10MB

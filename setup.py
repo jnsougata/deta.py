@@ -10,12 +10,12 @@ with open('README.md') as f:
 
 setup(
     name='deta',
-    version='0.0.6',
+    version='0.0.7',
     description='Async API wrapper for deta base and drive',
     long_description=readme,
     long_description_content_type="text/markdown",
     url='https://github.com/jnsougata/deta',
-    author='jnsougata',
+    author='Sougata Jana',
     author_email='jnsougata@gmail.com',
     classifiers=[
         'License :: OSI Approved :: MIT License',

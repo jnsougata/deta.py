@@ -29,39 +29,39 @@ pip install git+https://github.com/jnsougata/deta
 # Quick Start
 
 ```python
+import deta
 import asyncio
-from deta import Deta, Record
 
 
 async def main():
-  deta = Deta()
+  service = deta.Deta()
 
   # instantiating a base
-  base = deta.base(name='TEST_BASE')
+  base = service.base(name='TEST_BASE')
 
   # instantiating a drive
-  drive = deta.drive(name='TEST_DRIVE')
+  drive = service.drive(name='TEST_DRIVE')
 
   # put single json deta base
   await base.put(
-    Record({'name': 'John Doe', 'age': 20}, key='xyz', expire_after=100)
+    deta.Record({'name': 'John Doe', 'age': 20}, key='xyz', expire_after=100)
   )
 
   # or put multiple records with a single request
   await base.put(
-    Record({'name': 'John Doe 0', 'age': 20}, key='xyz_1', expire_after=100),
-    Record({'name': 'John Doe 1', 'age': 21}, key='xyz_2', expire_after=100),
-    Record({'name': 'John Doe 2', 'age': 22}, key='xyz_3', expire_after=100)
+    deta.Record({'name': 'John Doe 0', 'age': 20}, key='xyz_1', expire_after=100),
+    deta.Record({'name': 'John Doe 1', 'age': 21}, key='xyz_2', expire_after=100),
+    deta.Record({'name': 'John Doe 2', 'age': 22}, key='xyz_3', expire_after=100)
   )
 
   # doing queries
   q = deta.Query()
-  q.equal("name", "John")
-  q.equal("address.city", "New York")
+  q.equals("name", "John")
+  q.equals("address.city", "New York")
   q.range("age", 18, 30)
-  q.not_equal("position", "Manager")
+  q.not_equals("position", "Manager")
   q.contains("id", "-")
-  results = await db.fetch(q)
+  results = await base.fetch([q])
   print(results)
 
   # updating records
@@ -69,20 +69,21 @@ async def main():
   u.set("inactive", True)
   u.increment("age")
   u.delete("address")
-  await db.update("user_777", u)
+  await base.update("user_777", u)
 
   # downloading a song stored in deta drive
-  reader = await drive.get('song.mp3')
-  async for chunk, _ in reader.iter_chunks():
-    # do something with the chunk
-    ...
+  result = await drive.get('song.mp3')
+  if result.ok:
+    async for chunk, _ in result.reader.iter_chunks():
+      # do something with the chunk
+      ...
 
-  # or read the entire file
-  content = await reader.read()
-  # do something with the content
+    # or read the entire file
+    content = await result.read()
+    # do something with the content
 
   # closing deta connection
-  await deta.close()
+  await service.close()
 
 
 if __name__ == '__main__':
@@ -91,15 +92,16 @@ if __name__ == '__main__':
 
 # Async Context Manager
 ```python
-async def main():
-    async with Deta() as d:
+import deta
 
-        base = d.base('TEST_BASE')
+async def main():
+    async with deta.Deta() as service:
+        base = service.base('TEST_BASE')
         print(await base.get())
 
-        drive = d.drive('TEST_DRIVE')
-        reader = await drive.get('song.mp3')
-        content = await reader.read()
+        drive = service.drive('TEST_DRIVE')
+        result = await drive.get('song.mp3')
+        content = await result.read()
         with open('song.mp3', 'wb') as f:
             f.write(content)
 ```
@@ -108,17 +110,19 @@ async def main():
 
 # Base
 - `async put(*records: Record)` 
-  - **Returns:** Dict[str, Any]
+  - **Returns:** List[Result]
 - `async delete(self, *keys: str)` 
-  - **Returns:** Optional[List[Dict[str, str]]]
+  - **Returns:** List[Result]
 - `async get(*keys: str)`
-  - **Returns:** List[Dict[str, Any]]
+    - **Returns:** List[Result]
 - `async insert(*records: Record)`
-  - **Returns:** Optional[List[Dict[str, Any]]]
+  - **Returns:** List[Result]
 - `async update(key: str, updater: Updater)`
-  - **Returns:** Dict[str, Any]
-- `async query(*queries: Query, limit: Optional[int], last: Optional[str])`
-  - **Returns:** Dict[str, Any]
+  - **Returns:** Result
+- `async fetch(queries: List[Query], limit: Optional[int], last: Optional[str])`
+  - **Returns:** Result
+- `async fetch_until_end(queries: List[Query])`
+  - **Returns:** List[Result]
 
 # Drive
 - `async put(content: os.PathLike, *, save_as: Optional[str], folder: Optional[str])`
@@ -144,8 +148,8 @@ async def main():
 # Queries
 - Base class **Query**
 - Methods:
-  - `equal(field: str, value: Any)`
-  - `not_equal(field: str, value: Any)`
+  - `equals(field: str, value: Any)`
+  - `not_equals(field: str, value: Any)`
   - `contains(field: str, value: Any)`
   - `not_contains(field: str, value: Any)`
   - `greater_than(field: str, value: Any)`

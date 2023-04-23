@@ -78,10 +78,10 @@ class Query:
     def __init__(self):
         self._payload = {}
     
-    def equal(self, field: str, value: Any):
+    def equals(self, field: str, value: Any):
         self._payload[field] = value
     
-    def not_equal(self, field: str, value: Any):
+    def not_equals(self, field: str, value: Any):
         self._payload[f"{field}?ne"] = value
     
     def greater_than(self, field: str, value: Any):
@@ -127,8 +127,11 @@ class Result:
         return self._response.status == self._success_status
 
     @property
-    def content(self) -> aiohttp.StreamReader:
+    def reader(self) -> aiohttp.StreamReader:
         return self._response.content
 
-    async def json(self) -> Dict[str, Any]:
+    async def read(self) -> bytes:
+        return await self._response.read()
+
+    async def json(self) -> Any:
         return await self._response.json()
