@@ -111,7 +111,7 @@ async def main():
 # Base
 - `async put(*records: Record)` 
   - **Returns:** List[Result]
-- `async delete(self, *keys: str)` 
+- `async delete(*keys: str)` 
   - **Returns:** List[Result]
 - `async get(*keys: str)`
     - **Returns:** List[Result]
