@@ -98,4 +98,4 @@ async def main():
             f.write(await stream.read())
 ```
 # Documentation
-Read the [documentation](https://jnsougata.github.io/deta/) for more information.
+Read the [documentation](https://deta.readthedocs.io/en/latest/) for more information.
