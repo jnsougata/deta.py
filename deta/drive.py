@@ -1,12 +1,12 @@
-import io
-import os
 import re
-import secrets
 import asyncio
-from .utils import Result
 from urllib.parse import quote_plus
+
+import aiohttp
 from aiohttp import ClientSession
 from typing import Dict, Optional, Any, Tuple
+
+from .errors import *
 
 MAX_UPLOAD_SIZE = 10485760  # 10MB
 
@@ -18,69 +18,87 @@ class Drive:
         self.session = session
         self.project_id = project_key.split('_')[0]
         self.root = f'https://drive.deta.sh/v1/{self.project_id}/{name}'
-        self._auth_headers = {'X-Api-Key': project_key, 'Content-Type': 'application/octet-stream'}
+        self._auth_headers = {'X-Api-Key': project_key, 'Content-Type': 'application/json'}
 
     async def close(self):
+        """
+        Close the client session
+        """
         await self.session.close()
-    
+
     async def put(
         self, 
-        content: os.PathLike, 
+        content: bytes,
         *,
-        save_as: Optional[str] = None,
+        save_as: Optional[str],
         folder: Optional[str] = None,
-    ) -> Result:
-        if isinstance(content, str):
-            file = open(content, 'rb')
-            if not save_as:
-                save_as = file.name
-        elif isinstance(content, bytes):
-            file = io.BytesIO(content)
-            if not save_as:
-                save_as = secrets.token_hex(8)
-        else:
-            raise ValueError('path must be a string or bytes')
-        
-        if folder:
-            save_as = f'{folder}/{save_as}'
-        with file:
-            content = file.read()
-            if not len(content) > MAX_UPLOAD_SIZE:
-                resp = await self.session.post(
-                    f'{self.root}/files?name={quote_plus(save_as)}', 
-                    headers=self._auth_headers, data=content
-                )
-                return Result(resp, 201)
+        content_type: Optional[str] = 'application/octet-stream',
+    ) -> Dict[str, Any]:
+        """
+        Put a file into the drive
 
-            r = await self.session.post(
-                f'{self.root}/uploads?name={quote_plus(save_as)}', 
-                headers=self._auth_headers
+        Parameters
+        ----------
+        content : bytes
+            Content of the file in bytes
+        save_as : str
+            Name of the file to be saved as
+        folder : str | None
+            Name of the folder to put the file in
+        content_type : str | None
+            Content type of the file
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+
+        Raises
+        ------
+        BadRequest
+            If request body is invalid
+        NotFound
+            If the file is not found during chunked upload finalization
+        PayloadTooLarge
+            If the file size is greater than 10MB for direct upload or single chunk of chunked upload
+        """
+        if folder:
+            save_as = quote_plus(f'{folder}/{save_as}')
+        else:
+            save_as = quote_plus(save_as)
+        headers = self._auth_headers.copy()
+        if content_type:
+            headers['Content-Type'] = content_type
+        if not len(content) > MAX_UPLOAD_SIZE:
+            resp = await self.session.post(
+                f'{self.root}/files?name={save_as}', headers=headers, data=content
             )
-            if r.status == 202:
-                resp_data = await r.json()
-                upload_id = resp_data['upload_id']
-                name = resp_data['name']
-                chunked = [
-                    content[i:i+MAX_UPLOAD_SIZE] for i in range(0, len(content), MAX_UPLOAD_SIZE)
-                ]
-                upload_tasks = [
-                    self.session.post(
-                        f"{self.root}/uploads/{upload_id}/parts?name={name}&part={i + 1}", 
-                        headers=self._auth_headers, 
-                        data=chunk
-                    )
-                    for i, chunk in enumerate(chunked)
-                ]
-                gathered = await asyncio.gather(*upload_tasks)
-                status_codes = [r.status == 200 for r in gathered]
-                headers = self._auth_headers.copy()
-                headers['Content-Type'] = 'application/json'
-                if all(status_codes):
-                    resp = await self.session.patch(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
-                    return Result(resp, 200)
-                else:
-                    await self.session.delete(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
-                    raise ConnectionError("failed to upload file completely")
+            return await _raise_or_return(resp, 201)
+
+        r = await self.session.post(f'{self.root}/uploads?name={save_as}', headers=self._auth_headers)
+        if r.status == 202:
+            data = await r.json()
+            upload_id, name = data['upload_id'], data['name']
+            chunks = [content[i:i+MAX_UPLOAD_SIZE] for i in range(0, len(content), MAX_UPLOAD_SIZE)]
+            tasks = [
+                self.session.post(
+                    f"{self.root}/uploads/{upload_id}/parts?name={name}&part={i + 1}",
+                    headers=self._auth_headers, data=chunk
+                )
+                for i, chunk in enumerate(chunks)
+            ]
+            gathered = await asyncio.gather(*tasks)
+            status_codes = [r.status == 200 for r in gathered]
+            if all(status_codes):
+                resp = await self.session.patch(
+                    f"{self.root}/uploads/{upload_id}?name={name}", headers=self._auth_headers
+                )
+                return await _raise_or_return(resp, 200)
+            else:
+                await self.session.delete(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
+                raise ConnectionError("Failed to upload file completely")
+        else:
+            raise await _raise_or_return(r, 202)
 
     async def files(
         self, 
@@ -88,20 +106,42 @@ class Drive:
         prefix: Optional[str] = None, 
         last: Optional[str] = None
     ) -> Dict[str, Any]:
-        headers = self._auth_headers.copy()
-        headers['Content-Type'] = 'application/json'
+        """
+        Get a list of files in the drive
+
+        if no parameters are provided, names of all files in the drive are returned
+
+        Parameters
+        ----------
+        limit : int | None
+            Number of files to return
+        prefix : str | None
+            Prefix to filter files by
+        last : str | None
+            Last id returned in the previous request
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+        """
         if not limit and not prefix and not last:
-            initial_resp = await self.session.get(f'{self.root}/files', headers=headers)
-            initial_data = await initial_resp.json()
+            init_r = await self.session.get(f'{self.root}/files', headers=self._auth_headers)
+            init_d = await init_r.json()
             last = None
-            files = initial_data['names']
-            if initial_data.get('paging', {}).get('last', None):
-                last = initial_data['paging']['last']
+            files = init_d['names']
+            try:
+                last = init_d['paging']['last']
+            except KeyError:
+                pass
             while last:
-                data = await (await self.session.get(f'{self.root}/files?last={last}', headers=headers)).json()
+                resp = await self.session.get(f'{self.root}/files?last={last}', headers=self._auth_headers)
+                data = await resp.json()
                 files.extend(data['names'])
-                if data.get('paging', {}).get('last', None):
+                try:
                     last = data['paging']['last']
+                except KeyError:
+                    last = None
             return {'names': files}
 
         if not limit or limit > 1000 or limit < 0:
@@ -111,43 +151,77 @@ class Drive:
             url += f'&prefix={prefix}'
         if last:
             url += f'&last={last}'
-        resp = await self.session.get(url, headers=headers)
+        resp = await self.session.get(url, headers=self._auth_headers)
         return await resp.json()
 
     async def delete(self, *names: str) -> Dict[str, Any]:
+        """
+        Delete files from the drive
+
+        Parameters
+        ----------
+        *names : Tuple[str]
+            Names of the files to delete
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+        """
         if not names:
             raise ValueError('at least one filename must be provided')
-        headers = self._auth_headers.copy()
-        headers['Content-Type'] = 'application/json'
-        r = await self.session.delete(f'{self.root}/files', headers=headers, json={'names': list(names)})
+        r = await self.session.delete(f'{self.root}/files', headers=self._auth_headers, json={'names': list(names)})
         return await r.json()
     
-    async def size_of(self, filename: str) -> int:
+    async def size_of(self, name: str) -> int:
+        """
+        Get the size of a file in the drive in bytes
+
+        Parameters
+        ----------
+        name : str
+            Name of the file to get the size of
+        """
         headers = self._auth_headers.copy()
         headers['Range'] = 'bytes=0-0'
-        resp = await self.session.get(f'{self.root}/files?name={filename}', headers=headers)
-        range_ = resp.headers.get('Content-Range')
+        resp = await self.session.get(f'{self.root}/files?name={name}', headers=headers)
+        if resp.status != 206:
+            raise NotFound(f'File `{name}` not found')
+        range_header_value = resp.headers.get('Content-Range')
         pattern = re.compile(r'bytes 0-0/(\d+)')
-        match = pattern.match(range_)
-        if match:
-            return int(match.group(1))
-        return 0
+        match = pattern.match(range_header_value)
+        return int(match.group(1))
 
-    async def get(
-            self, 
-            filename: str, 
-            *,
-            bytes_range: Optional[Tuple[int, int]] = None,
-    ) -> Result:
+    async def get(self, name: str, *, bytes_range: Optional[Tuple[int, int]] = None) -> aiohttp.StreamReader:
+        """
+        Get a file from the drive
+
+        Parameters
+        ----------
+        name : str
+            Name of the file to get
+        bytes_range : Tuple[int, int] | None
+            Range of bytes to get from the remote file buffer
+
+        Returns
+        -------
+        aiohttp.StreamReader
+            The file content as a stream
+
+        Raises
+        ------
+        NotFound
+            If the file is not found
+        BadRequest
+            If the range is invalid
+        """
         headers = self._auth_headers.copy()
+        del headers['Content-Type']
         if bytes_range:
-            headers['Range'] = (
-                f'bytes={bytes_range[0]}-{bytes_range[1]}' if bytes_range[1] else f'bytes={bytes_range[0]}-')
-        resp = await self.session.get(
-            f'{self.root}/files/download?name={filename}',
-            headers=self._auth_headers
-        )
-        if resp.status == 200:
-            return Result(resp)
+            start, end = bytes_range if len(bytes_range) == 2 else (bytes_range[0], None)
+            headers['Range'] = f'bytes={start}-{end}' if end else f'bytes={start}-'
+        resp = await self.session.get(f'{self.root}/files/download?name={name}', headers=headers)
+        if resp.status in (200, 206):
+            return resp.content
         else:
-            return Result(resp, 206)
+            raise await _raise_or_return(resp)

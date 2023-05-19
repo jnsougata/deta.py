@@ -1,10 +1,22 @@
-import asyncio
 from aiohttp import ClientSession
-from typing import List, Optional
-from .utils import Record, Updater, Query, Result
+from typing import List, Optional, Dict, Any, Tuple
+from .errors import *
+from .utils import Record, Updater, Query
 
 
 class Base:
+    """
+    Base class for Deta Base
+
+    Parameters
+    ----------
+    name : str
+        Name of the base
+    project_key : str
+        Project key
+    session : aiohttp.ClientSession
+        External client session to be used for requests
+    """
     def __init__(self, name: str, project_key: str, session: ClientSession):
         self.name = name
         self.session = session
@@ -16,57 +28,149 @@ class Base:
         return self.name
 
     async def close(self):
+        """
+        Close the client session
+        """
         return await self.session.close()
     
-    async def put(self, *records: Record) -> Result:
+    async def put(self, *records: Record):
+        """
+        Put records into the base (max 25 records at a time)
+
+        Parameters
+        ----------
+        *records : Tuple[Record]
+            Records to be put into the base
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+
+        Raises
+        ------
+        ValueError
+            If no records are provided or more than 25 records are provided
+        BadRequest
+            If request body is invalid
+        """
         if not records:
             raise ValueError('at least one record must be provided')
         if len(records) > 25:
             raise ValueError('cannot put more than 25 records at a time')
-        payload = {"items": [record.json() for record in records]}
         resp = await self.session.put(
             f'{self.root}/items', 
-            json=payload, 
+            json={"items": [record.json() for record in records]},
             headers=self._auth_headers
         )
-        return Result(resp, 207)
-    
-    async def delete(self, *keys: str) -> List[Result]:
-        if not keys:
-            raise ValueError('at least one key must be provided')
-        if len(keys) == 1:
-            resp = await self.session.delete(f'{self.root}/items/{str(keys[0])}', headers=self._auth_headers)
-            return [Result(resp)]
-        responses = await asyncio.gather(*[self.session.delete(f'{self.root}/items/{str(k)}') for k in keys])
-        return [Result(r) for r in responses]
+        return await _raise_or_return(resp, 207)
 
-    async def get(self, *keys: str) -> List[Result]:
-        if not keys:
-            raise ValueError('at least one key must be provided')
-        if len(keys) == 1:
-            resp = await self.session.get(f'{self.root}/items/{str(keys[0])}', headers=self._auth_headers)
-            return [Result(resp)]
+    async def delete(self, key: str) -> Dict[str, Any]:
+        """
+        Delete a record from the base
 
-        tasks = [self.session.get(f'{self.root}/items/{str(k)}', headers=self._auth_headers) for k in keys]
-        responses = await asyncio.gather(*tasks)
-        return [Result(r) for r in responses]
+        Parameters
+        ----------
+        key : str
+            Key of the record to be deleted
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+
+        Notes
+        -----
+        If the key does not exist, the API will still return a 200 response with the following body:
+
+        ``{"key": "key"}``
+        """
+        resp = await self.session.delete(f'{self.root}/items/{key}', headers=self._auth_headers)
+        return await resp.json()
+
+    async def get(self, key: str) -> Dict[str, Any]:
+        """
+        Get a record from the base
+
+        Parameters
+        ----------
+        key : str
+            Key of the record to be fetched
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+
+        Raises
+        ------
+        ValueError
+            If key is empty or None
+        NotFound
+            If the key does not exist in the base
+        """
+        if not key:
+            raise ValueError('key cannot be empty')
+        resp = await self.session.get(f'{self.root}/items/{key}', headers=self._auth_headers)
+        return await _raise_or_return(resp, 200)
     
-    async def update(self, key: str, updater: Updater) -> Result:
+    async def update(self, key: str, updater: Updater) -> Dict[str, Any]:
+        """
+        Update a record in the base
+
+        Parameters
+        ----------
+        key : str
+            Key of the record to be updated
+        updater : Updater
+            Object containing the update operations
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+
+        Raises
+        ------
+        ValueError
+            If key is empty or None
+        NotFound
+            If the key does not exist in the base
+        BadRequest
+            If request body is invalid
+        """
+        if not key:
+            raise ValueError('key cannot be empty')
         resp = await self.session.patch(
-            f'{self.root}/items/{key}',
-            headers=self._auth_headers,
-            json=updater.json()
+            f'{self.root}/items/{key}', headers=self._auth_headers, json=updater.json()
         )
-        return Result(resp)
+        return await _raise_or_return(resp, 200)
 
-    async def insert(self, *records: Record) -> List[Result]:
-        if not records:
-            raise ValueError('at least one record must be provided')
-        tasks = [self.session.post(
-            f'{self.root}/items', headers=self._auth_headers, json=p
-        ) for p in [{"item": r.json()} for r in records]]
-        responses = await asyncio.gather(*tasks)
-        return [Result(r, 201) for r in responses]
+    async def insert(self, record: Record) -> Dict[str, Any]:
+        """
+        Insert a record into the base
+
+        Parameters
+        ----------
+        record : Record
+            Record to be inserted into the base
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+
+        Raises
+        ------
+        BadRequest
+            If request body is invalid
+        KeyConflict
+            If the key already exists in the base
+        """
+        resp = await self.session.post(
+            f'{self.root}/items', headers=self._auth_headers, json={"item": record.json()}
+        )
+        return await _raise_or_return(resp, 201)
 
     async def fetch(
             self,
@@ -74,7 +178,29 @@ class Base:
             *,
             limit: Optional[int] = None,
             last: Optional[str] = None
-    ) -> Result:
+    ) -> Dict[str, Any]:
+        """
+        Fetch records from the base
+
+        Parameters
+        ----------
+        queries : List[Query] | None
+            List of Query objects to be applied to the fetch operation
+        limit : int | None
+            Maximum number of records to be fetched (defaults to 1000)
+        last : str | None
+            Key of the last record fetched in the previous fetch operation
+
+        Returns
+        -------
+        Dict[str, Any]
+            Response from the API
+
+        Raises
+        ------
+        BadRequest
+            If request body is invalid
+        """
         if queries is None:
             queries = []
         payload = {"query": [q.json() for q in queries]}
@@ -83,22 +209,41 @@ class Base:
         if last:
             payload['last'] = last
         resp = await self.session.post(f'{self.root}/query', headers=self._auth_headers, json=payload)
-        return Result(resp)
+        return await _raise_or_return(resp, 200)
 
-    async def fetch_until_end(self, queries: Optional[List[Query]] = None) -> List[Result]:
+    @staticmethod
+    def _process_result(result: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+        items = result.get('items') or []
+        try:
+            return items, result['paging']['last']
+        except KeyError:
+            return items, None
+
+    async def fetch_all(self, queries: Optional[List[Query]] = None) -> List[Dict[str, Any]]:
+        """
+        Fetch all records from the base
+
+        Parameters
+        ----------
+        queries : List[Query] | None
+            List of Query objects to be applied to the fetch operation
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            List of records fetched from the base
+
+        Raises
+        ------
+        BadRequest
+            If request body is invalid
+        """
         results = []
         result = await self.fetch(queries)
-        results.append(result)
-        data = await result.json()
-        try:
-            last = data['paging']['last']
-        except KeyError:
-            return results
+        items, last = self._process_result(result)
+        results.extend(items)
         while last:
             result = await self.fetch(queries, last=last)
-            results.append(result)
-            data = await result.json()
-            try:
-                last = data['paging']['last']
-            except KeyError:
-                return results
+            items, last = self._process_result(result)
+            results.extend(items)
+        return results

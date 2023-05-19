@@ -7,6 +7,18 @@ from typing import Optional
 
 
 class Deta:
+    """
+    Base class for Deta
+
+    Parameters
+    ----------
+    project_key : str | None
+        Project key to be used for requests (can be set as an environment variable `DETA_PROJECT_KEY`)
+    session : aiohttp.ClientSession | None
+        External client session to be used for requests
+    loop : asyncio.AbstractEventLoop | None
+        Event loop to be used for requests
+    """
 
     def __init__(
         self,
@@ -32,10 +44,39 @@ class Deta:
             raise exc
 
     async def close(self):
+        """
+        Close the client session
+        """
         await self.session.close()
 
     def base(self, name: str) -> Base:
+        """
+        Create a lazy instance of Base
+
+        Parameters
+        ----------
+        name : str
+            Name of the base
+
+        Returns
+        -------
+        Base
+            Instance of Base
+        """
         return Base(name, self.token, self.session)
 
     def drive(self, name: str) -> Drive:
+        """
+        Create a lazy instance of Drive
+
+        Parameters
+        ----------
+        name : str
+            Name of the drive
+
+        Returns
+        -------
+        Drive
+            Instance of Drive
+        """
         return Drive(name, self.token, self.session)

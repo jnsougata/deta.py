@@ -11,12 +11,6 @@ An async library to interact with deta.sh base & drive
 - [Installing](#installing)
 - [Quick Start](#quick-start)
 - [Async Context Manager](#async-context-manager)
-- [Usage](#usage)
-- [Base](#base)
-- [Drive](#drive)
-- [Records](#records)
-- [Queries](#queries)
-- [Updates](#updates)
 
 # Installing
 
@@ -72,14 +66,13 @@ async def main():
   await base.update("user_777", u)
 
   # downloading a song stored in deta drive
-  result = await drive.get('song.mp3')
-  if result.ok:
-    async for chunk, _ in result.reader.iter_chunks():
-      # do something with the chunk
-      ...
+  stream = await drive.get('song.mp3')
+  async for chunk, _ in stream.iter_chunks():
+    # do something with the chunk
+    ...
 
     # or read the entire file
-    content = await result.read()
+    content = await stream.read()
     # do something with the content
 
   # closing deta connection
@@ -100,69 +93,9 @@ async def main():
         print(await base.get())
 
         drive = service.drive('TEST_DRIVE')
-        result = await drive.get('song.mp3')
-        content = await result.read()
+        stream = await drive.get('song.mp3')
         with open('song.mp3', 'wb') as f:
-            f.write(content)
+            f.write(await stream.read())
 ```
-
-# Usage
-
-# Base
-- `async put(*records: Record)` 
-  - **Returns:** List[Result]
-- `async delete(*keys: str)` 
-  - **Returns:** List[Result]
-- `async get(*keys: str)`
-    - **Returns:** List[Result]
-- `async insert(*records: Record)`
-  - **Returns:** List[Result]
-- `async update(key: str, updater: Updater)`
-  - **Returns:** Result
-- `async fetch(queries: List[Query], limit: Optional[int], last: Optional[str])`
-  - **Returns:** Result
-- `async fetch_until_end(queries: List[Query])`
-  - **Returns:** List[Result]
-
-# Drive
-- `async put(content: os.PathLike, *, save_as: Optional[str], folder: Optional[str])`
-  - **Returns:** Dict[str, Any]
-- `async get(filename: str, *, range: Optional[Tuple[int, int]])`
-  - **Returns:** StreamReader (Async)
-- `async files(limit: Optional[int], prefix: Optional[str], last: Optional[str])`
-  - **Returns:** Dict[str, Any]
-- `async delete(*names: str)`
-  - **Returns:** Dict[str, Any]
-- `async size_of(filename: str)`
-  - **Returns:** int
-
-# Records
-- Base class **Record** 
-- **Args**:
-  - `data: Dict[str, Any]`
-- **KwArgs**:
-  - `key: Optional[str]`
-  - `expire_at: Optional[datetime]`
-  - `expire_after: Optional[int]`
-
-# Queries
-- Base class **Query**
-- Methods:
-  - `equals(field: str, value: Any)`
-  - `not_equals(field: str, value: Any)`
-  - `contains(field: str, value: Any)`
-  - `not_contains(field: str, value: Any)`
-  - `greater_than(field: str, value: Any)`
-  - `greater_equal(field: str, value: Any)`
-  - `less_than(field: str, value: Any)`
-  - `less_equal(field: str, value: Any)`
-  - `prefix(field: str, value: Any)`
-  - `range(field: field: str, start: float, end: float)`
-
-# Updates
-- Base class **Updater**
-  - `set(field: str, value: Any)`
-  - `delete(field: str)`
-  - `increment(field: str, value: int)`
-  - `append(field: str, value: Any)`
-  - `prepend(field: str, value: Any)`
+# Documentation
+Read the [documentation](https://jnsougata.github.io/deta/) for more information.
