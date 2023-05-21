@@ -55,10 +55,10 @@ async def _raise_or_return(response: ClientResponse, ok: int = 200) -> Dict[str,
     else:
         if response.status == 413:
             raise PayloadTooLarge("Payload size is exceeds the limit of 10MB")
-        message = ".".join((await response.json())['errors'])
         if response.status == 404:
-            raise NotFound(message)
-        elif response.status == 400:
+            raise NotFound("Resource not found")
+        message = ".".join((await response.json())['errors'])
+        if response.status == 400:
             raise BadRequest(message)
         elif response.status == 409:
             raise KeyConflict(message)
