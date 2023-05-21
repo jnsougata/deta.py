@@ -6,7 +6,7 @@ from .utils import Record, Updater, Query
 
 class Base:
     """
-    Base class for Deta Base
+    Represents a Deta Base instance
 
     Parameters
     ----------

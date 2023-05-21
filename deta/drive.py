@@ -1,9 +1,7 @@
 import re
 import asyncio
+from aiohttp import ClientSession, StreamReader
 from urllib.parse import quote_plus
-
-import aiohttp
-from aiohttp import ClientSession
 from typing import Dict, Optional, Any, Tuple
 
 from .errors import *
@@ -12,6 +10,18 @@ MAX_UPLOAD_SIZE = 10485760  # 10MB
 
 
 class Drive:
+    """
+    Represents a Deta Drive instance
+
+    Parameters
+    ----------
+    name : str
+        Name of the drive
+    project_key : str
+        Project key of the drive
+    session : aiohttp.ClientSession
+        External client session to be used for requests
+    """
 
     def __init__(self, name: str, project_key: str, session: ClientSession):
         self.name = name
@@ -194,7 +204,7 @@ class Drive:
         match = pattern.match(range_header_value)
         return int(match.group(1))
 
-    async def get(self, name: str, *, bytes_range: Optional[Tuple[int, int]] = None) -> aiohttp.StreamReader:
+    async def get(self, name: str, *, bytes_range: Optional[Tuple[int, int]] = None) -> StreamReader:
         """
         Get a file from the drive
 
@@ -208,7 +218,7 @@ class Drive:
         Returns
         -------
         aiohttp.StreamReader
-            The file content as a stream
+            The file content as a stream reader
 
         Raises
         ------
