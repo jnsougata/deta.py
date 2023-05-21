@@ -26,4 +26,3 @@ from .errors import (
     IncompleteUpload
 )
 from .utils import Record, Updater, Query
-
