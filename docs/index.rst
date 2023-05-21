@@ -25,6 +25,10 @@ Documentation
    :members:
    :show-inheritance:
 
+.. autoclass:: deta.Unauthorized
+   :members:
+   :show-inheritance:
+
 .. autoclass:: deta.NotFound
    :members:
    :show-inheritance:
@@ -38,6 +42,14 @@ Documentation
    :show-inheritance:
 
 .. autoclass:: deta.KeyConflict
+   :members:
+   :show-inheritance:
+
+.. autoclass:: deta.IncompleteUpload
+   :members:
+   :show-inheritance:
+
+.. autoclass:: deta.DetaUnknownError
    :members:
    :show-inheritance:
 

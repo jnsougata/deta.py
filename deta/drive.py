@@ -61,6 +61,8 @@ class Drive:
             If the file is not found during chunked upload finalization
         PayloadTooLarge
             If the file size is greater than 10MB for direct upload or single chunk of chunked upload
+        IncompleteUpload
+            If the file is not uploaded completely during chunked upload
         """
         if folder:
             save_as = quote_plus(f'{folder}/{save_as}')
@@ -96,7 +98,7 @@ class Drive:
                 return await _raise_or_return(resp, 200)
             else:
                 await self.session.delete(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
-                raise ConnectionError("Failed to upload file completely")
+                raise IncompleteUpload(f"Failed to upload all chunks of the file `{name}`")
         else:
             raise await _raise_or_return(r, 202)
 

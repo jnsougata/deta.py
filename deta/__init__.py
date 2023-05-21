@@ -16,5 +16,14 @@ __author__ = "Sougata Jana"
 __version__ = "0.0.7a"
 
 from .deta import Deta, Base, Drive
+from .errors import (
+    Unauthorized,
+    NotFound,
+    BadRequest,
+    PayloadTooLarge,
+    KeyConflict,
+    DetaUnknownError,
+    IncompleteUpload
+)
 from .utils import Record, Updater, Query
-from .errors import NotFound, BadRequest, PayloadTooLarge, KeyConflict
+
