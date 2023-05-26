@@ -30,7 +30,7 @@ if version.endswith(('a', 'b', 'rc')):
 
 setup(
     name='deta',
-    version='0.0.7',
+    version=version,
     description='Async API wrapper for Deta Base and Drive HTTP API',
     url='https://github.com/jnsougata/deta',
     author='Sougata Jana',
