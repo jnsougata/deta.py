@@ -27,7 +27,7 @@ class Deta:
         session: Optional[aiohttp.ClientSession] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None
     ):
-        self.token = project_key or os.getenv('DETA_PROJECT_KEY')
+        self.token = project_key
         assert self.token, 'project key is required'
         assert len(self.token.split('_')) == 2, 'invalid project key'
         if not session:
