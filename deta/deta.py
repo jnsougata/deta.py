@@ -1,4 +1,3 @@
-import os
 import asyncio
 import aiohttp
 from .base import Base
