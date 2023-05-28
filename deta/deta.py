@@ -11,8 +11,8 @@ class Deta:
 
     Parameters
     ----------
-    project_key : str | None
-        Project key to be used for requests (can be set as an environment variable `DETA_PROJECT_KEY`)
+    project_key : str
+        Project key to be used for requests
     session : aiohttp.ClientSession | None
         External client session to be used for requests
     loop : asyncio.AbstractEventLoop | None
@@ -21,7 +21,7 @@ class Deta:
 
     def __init__(
         self,
-        project_key: Optional[str] = None,
+        project_key: str,
         *,
         session: Optional[aiohttp.ClientSession] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None
