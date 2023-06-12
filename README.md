@@ -28,7 +28,7 @@ import asyncio
 
 
 async def main():
-  service = deta.Deta()
+  service = deta.Deta(DETA_PROJECT_KEY)
 
   # instantiating a base
   base = service.base(name='TEST_BASE')
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 import deta
 
 async def main():
-    async with deta.Deta() as service:
+    async with deta.Deta(DETA_PROJECT_KEY) as service:
         base = service.base('TEST_BASE')
         print(await base.get())
 
