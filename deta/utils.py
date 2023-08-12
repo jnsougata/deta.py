@@ -1,6 +1,9 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Union, Any
-from typing import TypedDict, NotRequired
+try:
+    from typing import TypedDict, NotRequired
+except Exception:  # noqa
+    from typing_extensions import TypedDict, NotRequired
 
 
 def time_converter(time_value: Union[int, float, datetime]) -> float:
