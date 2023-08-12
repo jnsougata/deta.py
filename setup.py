@@ -6,6 +6,8 @@ requirements = []
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()  # type: ignore
 
+requirements.remove("furo")
+
 version = ''
 with open('deta/__init__.py') as f:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.MULTILINE).group(1)  # type: ignore

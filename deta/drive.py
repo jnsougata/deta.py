@@ -27,8 +27,7 @@ class Drive:
         self.name = name
         self.session = session
         self.project_id = project_key.split('_')[0]
-        self.root = f'https://drive.deta.sh/v1/{self.project_id}/{name}'
-        self._auth_headers = {'X-Api-Key': project_key, 'Content-Type': 'application/json'}
+        self.root = f'https://drive.deta.sh/v1/{self.project_id}/{quote_plus(name)}'
 
     async def close(self):
         """
@@ -78,33 +77,24 @@ class Drive:
             save_as = quote_plus(f'{folder}/{save_as}')
         else:
             save_as = quote_plus(save_as)
-        headers = self._auth_headers.copy()
-        if content_type:
-            headers['Content-Type'] = content_type
+        headers = {"Content-Type": content_type}
         if not len(content) > MAX_UPLOAD_SIZE:
-            resp = await self.session.post(
-                f'{self.root}/files?name={save_as}', headers=headers, data=content
-            )
+            resp = await self.session.post(f'{self.root}/files?name={save_as}', headers=headers, data=content)
             return await _raise_or_return(resp, 201)
 
-        r = await self.session.post(f'{self.root}/uploads?name={save_as}', headers=self._auth_headers)
+        r = await self.session.post(f'{self.root}/uploads?name={save_as}', headers=headers)
         if r.status == 202:
             data = await r.json()
             upload_id, name = data['upload_id'], data['name']
             chunks = [content[i:i+MAX_UPLOAD_SIZE] for i in range(0, len(content), MAX_UPLOAD_SIZE)]
             tasks = [
-                self.session.post(
-                    f"{self.root}/uploads/{upload_id}/parts?name={name}&part={i + 1}",
-                    headers=self._auth_headers, data=chunk
-                )
+                self.session.post(f"{self.root}/uploads/{upload_id}/parts?name={name}&part={i + 1}", data=chunk)
                 for i, chunk in enumerate(chunks)
             ]
             gathered = await asyncio.gather(*tasks)
             status_codes = [r.status == 200 for r in gathered]
             if all(status_codes):
-                resp = await self.session.patch(
-                    f"{self.root}/uploads/{upload_id}?name={name}", headers=self._auth_headers
-                )
+                resp = await self.session.patch(f"{self.root}/uploads/{upload_id}?name={name}")
                 return await _raise_or_return(resp, 200)
             else:
                 await self.session.delete(f"{self.root}/uploads/{upload_id}?name={name}", headers=headers)
@@ -138,7 +128,7 @@ class Drive:
             Response from the API
         """
         if not limit and not prefix and not last:
-            init_r = await self.session.get(f'{self.root}/files', headers=self._auth_headers)
+            init_r = await self.session.get(f'{self.root}/files')
             init_d = await init_r.json()
             last = None
             files = init_d['names']
@@ -147,7 +137,7 @@ class Drive:
             except KeyError:
                 pass
             while last:
-                resp = await self.session.get(f'{self.root}/files?last={last}', headers=self._auth_headers)
+                resp = await self.session.get(f'{self.root}/files?last={last}')
                 data = await resp.json()
                 files.extend(data['names'])
                 try:
@@ -163,7 +153,7 @@ class Drive:
             url += f'&prefix={prefix}'
         if last:
             url += f'&last={last}'
-        resp = await self.session.get(url, headers=self._auth_headers)
+        resp = await self.session.get(url)
         return await resp.json()
 
     async def delete(self, *names: str) -> Dict[str, Any]:
@@ -182,7 +172,7 @@ class Drive:
         """
         if not names:
             raise ValueError('at least one filename must be provided')
-        r = await self.session.delete(f'{self.root}/files', headers=self._auth_headers, json={'names': list(names)})
+        r = await self.session.delete(f'{self.root}/files', json={'names': list(names)})
         return await r.json()
     
     async def size_of(self, name: str) -> int:
@@ -194,9 +184,7 @@ class Drive:
         name : str
             Name of the file to get the size of
         """
-        headers = self._auth_headers.copy()
-        headers['Range'] = 'bytes=0-0'
-        resp = await self.session.get(f'{self.root}/files?name={name}', headers=headers)
+        resp = await self.session.get(f'{self.root}/files?name={name}', headers={'Range': 'bytes=0-0'})
         if resp.status != 206:
             raise NotFound(f'File `{name}` not found')
         range_header_value = resp.headers.get('Content-Range')
@@ -204,7 +192,7 @@ class Drive:
         match = pattern.match(range_header_value)
         return int(match.group(1))
 
-    async def get(self, name: str, *, bytes_range: Optional[Tuple[int, int]] = None) -> StreamReader:
+    async def get(self, name: str, *, _range: Optional[Tuple[int, int]] = None) -> StreamReader:
         """
         Get a file from the drive
 
@@ -212,7 +200,7 @@ class Drive:
         ----------
         name : str
             Name of the file to get
-        bytes_range : Tuple[int, int] | None
+        _range : Tuple[int, int] | None
             Range of bytes to get from the remote file buffer
 
         Returns
@@ -227,10 +215,9 @@ class Drive:
         BadRequest
             If the range is invalid
         """
-        headers = self._auth_headers.copy()
-        del headers['Content-Type']
-        if bytes_range:
-            start, end = bytes_range if len(bytes_range) == 2 else (bytes_range[0], None)
+        headers = {}
+        if _range:
+            start, end = _range if len(_range) == 2 else (_range[0], None)
             headers['Range'] = f'bytes={start}-{end}' if end else f'bytes={start}-'
         resp = await self.session.get(f'{self.root}/files/download?name={name}', headers=headers)
         if resp.status in (200, 206):

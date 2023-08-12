@@ -1,22 +1,21 @@
 from datetime import datetime, timedelta
 from typing import List, Dict, Union, Any
+from typing import TypedDict, NotRequired
 
 
-def unix_converter(time_value: Union[int, float, datetime]) -> float:
+def time_converter(time_value: Union[int, float, datetime]) -> float:
     if isinstance(time_value, datetime):
         return time_value.replace(microsecond=0).timestamp()
     else:
         return (datetime.now() + timedelta(seconds=time_value)).replace(microsecond=0).timestamp()
 
 
-class Record:
+class Record(TypedDict, total=False):
     """
     Represents a record to be put into the base
 
     Parameters
     ----------
-    data : Dict[str, Any]
-        Data to be put into the base
     key : str
         Key of the record
     expire_at : datetime
@@ -24,27 +23,9 @@ class Record:
     expire_after : int | float
         Time in seconds after which the record will expire
     """
-    def __init__(
-        self,  
-        data: Dict[str, Any] = None,
-        *, 
-        key: str = None,
-        expire_at: datetime = None,
-        expire_after: Union[int, float] = None,
-    ):
-        self.key = key
-        self.data = data or {}
-        self.expire_at = expire_at
-        self.expire_after = expire_after
-    
-    def json(self) -> Dict[str, Any]:
-        if self.key:
-            self.data["key"] = self.key
-        if self.expire_at:
-            self.data["__expires"] = unix_converter(self.expire_at)
-        elif self.expire_after:
-            self.data["__expires"] = unix_converter(self.expire_after)
-        return self.data
+    key: NotRequired[str]
+    expire_at: NotRequired[datetime]
+    expire_after: NotRequired[Union[int, float]]
 
 
 class Updater:

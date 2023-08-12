@@ -1,7 +1,19 @@
 from aiohttp import ClientSession
 from typing import List, Optional, Dict, Any, Tuple
+
 from .errors import *
-from .utils import Record, Updater, Query
+from .utils import Record, Updater, Query, time_converter
+
+
+def _update_ttl(record: Record):
+    if "expire_after" in record and "expire_at" in record:
+        raise ValueError('expire_after and expire_at are mutually exclusive')
+    if "expire_after" in record:
+        record["__expires"] = time_converter(record["expire_after"])  # type: ignore
+        del record["expire_after"]
+    if "expire_at" in record:
+        record["__expires"] = time_converter(record["expire_at"])  # type: ignore
+        del record["expire_at"]
 
 
 class Base:
@@ -12,17 +24,16 @@ class Base:
     ----------
     name : str
         Name of the base
-    project_key : str
-        Project key
+    project_id : str
+        Project ID to be used for requests
     session : aiohttp.ClientSession
         External client session to be used for requests
     """
-    def __init__(self, name: str, project_key: str, session: ClientSession):
+    def __init__(self, name: str, project_id: str, session: ClientSession):
         self.name = name
         self.session = session
-        self.project_id = project_key.split('_')[0]
+        self.project_id = project_id
         self.root = f'https://database.deta.sh/v1/{self.project_id}/{name}'
-        self._auth_headers = {'X-API-Key': project_key, 'Content-Type': 'application/json'}
 
     def __str__(self):
         return self.name
@@ -58,11 +69,9 @@ class Base:
             raise ValueError('at least one record must be provided')
         if len(records) > 25:
             raise ValueError('cannot put more than 25 records at a time')
-        resp = await self.session.put(
-            f'{self.root}/items', 
-            json={"items": [record.json() for record in records]},
-            headers=self._auth_headers
-        )
+        for record in records:
+            _update_ttl(record)
+        resp = await self.session.put(f'{self.root}/items', json={"items": records})
         return await _raise_or_return(resp, 207)
 
     async def delete(self, key: str) -> Dict[str, Any]:
@@ -85,7 +94,7 @@ class Base:
 
         ``{"key": "key"}``
         """
-        resp = await self.session.delete(f'{self.root}/items/{key}', headers=self._auth_headers)
+        resp = await self.session.delete(f'{self.root}/items/{key}')
         return await resp.json()
 
     async def get(self, key: str) -> Dict[str, Any]:
@@ -111,7 +120,7 @@ class Base:
         """
         if not key:
             raise ValueError('key cannot be empty')
-        resp = await self.session.get(f'{self.root}/items/{key}', headers=self._auth_headers)
+        resp = await self.session.get(f'{self.root}/items/{key}')
         return await _raise_or_return(resp, 200)
     
     async def update(self, key: str, updater: Updater) -> Dict[str, Any]:
@@ -141,9 +150,7 @@ class Base:
         """
         if not key:
             raise ValueError('key cannot be empty')
-        resp = await self.session.patch(
-            f'{self.root}/items/{key}', headers=self._auth_headers, json=updater.json()
-        )
+        resp = await self.session.patch(f'{self.root}/items/{key}', json=updater.json())
         return await _raise_or_return(resp, 200)
 
     async def insert(self, record: Record) -> Dict[str, Any]:
@@ -152,7 +159,7 @@ class Base:
 
         Parameters
         ----------
-        record : Record
+        record : :class:`Record`
             Record to be inserted into the base
 
         Returns
@@ -167,17 +174,17 @@ class Base:
         KeyConflict
             If the key already exists in the base
         """
-        resp = await self.session.post(
-            f'{self.root}/items', headers=self._auth_headers, json={"item": record.json()}
-        )
+        _update_ttl(record)
+        resp = await self.session.post(f'{self.root}/items', json={"item": record})
         return await _raise_or_return(resp, 201)
 
     async def fetch(
-            self,
-            queries: Optional[List[Query]] = None,
-            *,
-            limit: Optional[int] = None,
-            last: Optional[str] = None
+        self,
+        queries: Optional[List[Query]] = None,
+        *,
+        limit: Optional[int] = None,
+        last: Optional[str] = None,
+        sort: bool = False
     ) -> Dict[str, Any]:
         """
         Fetch records from the base
@@ -190,6 +197,8 @@ class Base:
             Maximum number of records to be fetched (defaults to 1000)
         last : str | None
             Key of the last record fetched in the previous fetch operation
+        sort : bool
+            Whether to sort the results by key in descending order (defaults to False)
 
         Returns
         -------
@@ -208,7 +217,9 @@ class Base:
             payload['limit'] = limit
         if last:
             payload['last'] = last
-        resp = await self.session.post(f'{self.root}/query', headers=self._auth_headers, json=payload)
+        if sort:
+            payload['sort'] = 'desc'
+        resp = await self.session.post(f'{self.root}/query', json=payload)
         return await _raise_or_return(resp, 200)
 
     @staticmethod

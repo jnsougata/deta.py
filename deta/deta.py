@@ -1,4 +1,6 @@
 import asyncio
+import os
+
 import aiohttp
 from .base import Base
 from .drive import Drive
@@ -11,8 +13,10 @@ class Deta:
 
     Parameters
     ----------
-    project_key : str
+    project_key : str | None
         Project key to be used for requests
+    env : str | None
+        Name of the environment variable to be used
     session : aiohttp.ClientSession | None
         External client session to be used for requests
     loop : asyncio.AbstractEventLoop | None
@@ -21,18 +25,23 @@ class Deta:
 
     def __init__(
         self,
-        project_key: str,
+        project_key: Optional[str] = None,
         *,
+        env: Optional[str] = None,
         session: Optional[aiohttp.ClientSession] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None
     ):
-        self.token = project_key
+        if not project_key and not env:
+            raise ValueError('project key or env is required')
+        self.token = project_key or os.environ.get(env)
         assert self.token, 'project key is required'
         assert len(self.token.split('_')) == 2, 'invalid project key'
         if not session:
             self.session = aiohttp.ClientSession(loop=loop)
         else:
             self.session = session
+        self.session.headers.update({'X-API-Key': self.token, 'Content-Type': 'application/json'})
+        self.project_id = self.token.split('_')[0]
 
     async def __aenter__(self):
         return self
@@ -62,7 +71,7 @@ class Deta:
         Base
             Instance of Base
         """
-        return Base(name, self.token, self.session)
+        return Base(name, self.project_id, self.session)
 
     def drive(self, name: str) -> Drive:
         """
@@ -78,4 +87,4 @@ class Deta:
         Drive
             Instance of Drive
         """
-        return Drive(name, self.token, self.session)
+        return Drive(name, self.project_id, self.session)
