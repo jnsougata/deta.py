@@ -2,18 +2,7 @@ from aiohttp import ClientSession
 from typing import List, Optional, Dict, Any, Tuple
 
 from .errors import *
-from .utils import Record, Updater, Query, time_converter
-
-
-def _update_ttl(record: Record):
-    if "expire_after" in record and "expire_at" in record:
-        raise ValueError('expire_after and expire_at are mutually exclusive')
-    if "expire_after" in record:
-        record["__expires"] = time_converter(record["expire_after"])  # type: ignore
-        del record["expire_after"]
-    if "expire_at" in record:
-        record["__expires"] = time_converter(record["expire_at"])  # type: ignore
-        del record["expire_at"]
+from .utils import Record, Updater, Query
 
 
 class Base:
@@ -69,9 +58,7 @@ class Base:
             raise ValueError('at least one record must be provided')
         if len(records) > 25:
             raise ValueError('cannot put more than 25 records at a time')
-        for record in records:
-            _update_ttl(record)
-        resp = await self.session.put(f'{self.root}/items', json={"items": records})
+        resp = await self.session.put(f'{self.root}/items', json={"items": [record.payload for record in records]})
         return await _raise_or_return(resp, 207)
 
     async def delete(self, key: str) -> Dict[str, Any]:
@@ -174,8 +161,7 @@ class Base:
         KeyConflict
             If the key already exists in the base
         """
-        _update_ttl(record)
-        resp = await self.session.post(f'{self.root}/items', json={"item": record})
+        resp = await self.session.post(f'{self.root}/items', json={"item": record.payload})
         return await _raise_or_return(resp, 201)
 
     async def fetch(

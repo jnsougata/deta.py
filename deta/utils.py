@@ -1,9 +1,5 @@
 from datetime import datetime, timedelta
-from typing import List, Dict, Union, Any
-try:
-    from typing import TypedDict, NotRequired
-except Exception:  # noqa
-    from typing_extensions import TypedDict, NotRequired
+from typing import List, Dict, Union, Any, Optional
 
 
 def time_converter(time_value: Union[int, float, datetime]) -> float:
@@ -13,7 +9,7 @@ def time_converter(time_value: Union[int, float, datetime]) -> float:
         return (datetime.now() + timedelta(seconds=time_value)).replace(microsecond=0).timestamp()
 
 
-class Record(TypedDict, total=False):
+class Record:
     """
     Represents a record to be put into the base
 
@@ -26,9 +22,26 @@ class Record(TypedDict, total=False):
     expire_after : int | float
         Time in seconds after which the record will expire
     """
-    key: NotRequired[str]
-    expire_at: NotRequired[datetime]
-    expire_after: NotRequired[Union[int, float]]
+    def __init__(
+        self,
+        key: Optional[str] = None,
+        *,
+        expire_at: Optional[datetime] = None,
+        expire_after: Optional[Union[int, float]] = None,
+        **kwargs
+    ):
+        self.key = key
+        self.expire_at = expire_at
+        self.expire_after = expire_after
+        self.payload = kwargs
+        if self.key:
+            self.payload["key"] = self.key
+        if expire_after and expire_at:
+            raise ValueError('expire_after and expire_at are mutually exclusive')
+        if expire_after:
+            self.payload["__expires"] = time_converter(expire_after)
+        if expire_at:
+            self.payload["__expires"] = time_converter(expire_at)
 
 
 class Updater:

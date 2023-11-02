@@ -13,10 +13,8 @@ class Deta:
 
     Parameters
     ----------
-    project_key : str | None
+    project_key : str
         Project key to be used for requests
-    env : str | None
-        Name of the environment variable to be used
     session : aiohttp.ClientSession | None
         External client session to be used for requests
     loop : asyncio.AbstractEventLoop | None
@@ -25,15 +23,14 @@ class Deta:
 
     def __init__(
         self,
-        project_key: Optional[str] = None,
+        project_key: str,
         *,
-        env: Optional[str] = None,
         session: Optional[aiohttp.ClientSession] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None
     ):
-        if not project_key and not env:
-            raise ValueError('project key or env is required')
-        self.token = project_key or os.environ.get(env)
+        if not project_key:
+            raise ValueError('project key is required')
+        self.token = project_key
         assert self.token, 'project key is required'
         assert len(self.token.split('_')) == 2, 'invalid project key'
         if not session:
@@ -42,6 +39,15 @@ class Deta:
             self.session = session
         self.session.headers.update({'X-API-Key': self.token, 'Content-Type': 'application/json'})
         self.project_id = self.token.split('_')[0]
+
+    @classmethod
+    def from_env(
+        cls,
+        session: Optional[aiohttp.ClientSession] = None,
+        loop: Optional[asyncio.AbstractEventLoop] = None
+    ) -> 'Deta':
+
+        return cls(os.environ.get("DETA_PROJECT_KEY"), session=session, loop=loop)
 
     async def __aenter__(self):
         return self
@@ -59,7 +65,7 @@ class Deta:
 
     def base(self, name: str) -> Base:
         """
-        Create a lazy instance of Base
+        Creates a lazy instance of Base
 
         Parameters
         ----------
