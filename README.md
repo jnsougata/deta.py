@@ -1,23 +1,22 @@
-# deta
+# deta.py
 
-An async library to interact with deta.sh base & drive
+An async library to interact with deta base & drive.
 
+## Community
 - [Discord](https://discord.gg/bh99VTt9dH)
-- [GitHub](https://github.com/jnsougata)
 
 # Table of Contents
-- [deta](#deta)
 - [Table of Contents](#table-of-contents)
-- [Installing](#installing)
+- [Installing](#installation)
 - [Quick Start](#quick-start)
 - [Async Context Manager](#async-context-manager)
 
-# Installing
+# Installation
 
-**Recommended:** Python 3.8.0 or higher
+> Python 3.8+ recommended
 
 ```shell
-pip install git+https://github.com/jnsougata/deta
+pip install git+https://github.com/jnsougata/deta.py
 ```
 
 # Quick Start
